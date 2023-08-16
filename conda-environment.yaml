@@ -203,7 +203,7 @@ dependencies:
       - mpmath==1.2.1
       - onnx==1.13.1
       - onnxruntime-gpu==1.14.1
-      - opencv-python==4.7.0.72
+      - -python=opencv=4.7.0.72
       - opencv-python-headless==4.7.0.72
       - packaging==23.0
       - pathtools==0.1.2

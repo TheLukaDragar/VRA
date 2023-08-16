@@ -13,8 +13,9 @@
 #example salloc --nodes=1 --gres=gpu:2 --ntasks-per-node=2 --mem=0 --time=0-10:00:00 --cpus-per-task=12 --job-name=Interactive_GPU2 --partition=gpu 
 
 
-source ~/miniconda3/etc/profile.d/conda.sh
-conda activate pytorch_env
+
+source  /d/hpc/projects/FRI/ldragar/miniconda3/etc/profile.d/conda.sh
+conda activate /d/hpc/projects/FRI/ldragar/pytorch_env
 
 seed=-1 #no seed better results
 cp_id="wrc2h54x" #our best eva model

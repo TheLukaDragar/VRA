@@ -13,9 +13,8 @@
 
 #this code is used to extract the dataset of cropped faces from the original dataset
 #and save them in the folder "dataset"
-source ~/miniconda3/etc/profile.d/conda.sh
-conda activate pytorch_env
-
+source  /d/hpc/projects/FRI/ldragar/miniconda3/etc/profile.d/conda.sh
+conda activate /d/hpc/projects/FRI/ldragar/pytorch_env
 
 input_root_path=/d/hpc/projects/FRI/ldragar/original_dataset/
 output_root_path=./dataset/

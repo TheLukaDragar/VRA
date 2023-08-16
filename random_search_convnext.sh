@@ -18,7 +18,7 @@ cpu_per_task=12
 
 # Activate the Conda environment
 source ~/miniconda3/etc/profile.d/conda.sh
-conda activate pytorch_env
+conda activate /d/hpc/projects/FRI/ldragar/condaenv
 
 # Loop through the range of random seeds
 for i in $(seq $min_seed $max_seed); do
@@ -42,7 +42,7 @@ for i in $(seq $min_seed $max_seed); do
 
 # Run the train_convnext.py script with the specified seed
 source ~/miniconda3/etc/profile.d/conda.sh
-conda activate pytorch_env
+conda activate /d/hpc/projects/FRI/ldragar/condaenv
 nvidia-smi
 export WANDB__SERVICE_WAIT=300
 export NCCL_DEBUG=INFO

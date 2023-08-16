@@ -356,6 +356,9 @@ class RandomSeqFaceFramesDataset(Dataset):
         self.transform = transform
         self.seq_len = seq_len
 
+        if seed is not None:
+            random.seed(seed)
+
         # Read the dataset labels file
         self.video_dirs, self.mos_labels = [], []
         with open(labels_file, 'r') as csvfile:
@@ -380,6 +383,12 @@ class RandomSeqFaceFramesDataset(Dataset):
         # Choose a random starting frame and get the sequence of frames
         start_frame = random.randint(0, max(0, frame_count - self.seq_len))
         frame_sequence = frame_names[start_frame : start_frame + self.seq_len]
+
+        # Logging the chosen start frame and sequence
+        print(f"Video directory: {video_dir}")
+        print(f"Chosen start frame: {start_frame}")
+        print(f"Chosen frame sequence: {frame_sequence}")
+
 
         # Read and transform the frames
         frames = []
