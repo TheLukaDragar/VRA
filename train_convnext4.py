@@ -5,6 +5,7 @@ import warnings
 print("importing modules")
 from dataset_tool import RandomSeqFaceFramesDataset, FaceFramesSeqPredictionDatasetFinal
 from dataset_tool import build_transforms
+import math
 
 print("imported dataset_1")
 import torch
@@ -149,12 +150,12 @@ class ConvNeXt(pl.LightningModule):
         loss = self.RMSE(preds, y)
         self.log("val_loss", loss.item(), on_epoch=True, prog_bar=True, sync_dist=True)
         #if loss is nan.0 then stop training
-        if loss.item() == float('nan'):
+        if math.isnan(loss_value):
             print("val_loss is nan.0 stopping training")
-            exit(1)
-        if loss.item() == float('inf'):
+            self.trainer.should_stop = True
+        elif math.isinf(loss_value):
             print("val_loss is inf stopping training")
-            exit(1)
+            self.trainer.should_stop = True
 
     
        
