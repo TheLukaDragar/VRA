@@ -18,7 +18,7 @@ command:
 
 
 
-method: random
+method: grid
 metric:
   goal: maximize
   name: final_score
@@ -29,9 +29,12 @@ parameters:
   #     - convnext_xlarge_384_in22ft1k
   #   distribution: categorical
   batch_size:
-    max: 4
-    min: 1
-    distribution: int_uniform
+    values:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
     
   seq_len:
     values:
@@ -73,6 +76,7 @@ parameters:
     values:
       - 32585
       - 42
+
 
   # devices:
   #   value:
