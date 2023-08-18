@@ -1,0 +1,71 @@
+project: luka_vra
+name: eva_Sweep 
+program: train_eva4.py
+
+command:
+  - ${env}
+  # - echo
+  - python3
+  - ${program}
+  - ${args}
+
+method: bayes
+metric:
+  goal: maximize
+  name: final_score
+parameters:
+  # model_name:
+  #   values:
+  #     - convnext_xlarge_384_in22ft1k
+  #   distribution: categorical
+  batch_size:
+    max: 2
+    min: 1
+    distribution: int_uniform
+    
+  seq_len:
+    values:
+      - 1
+      - 2
+      - 4
+      - 6
+      - 8
+    distribution: categorical
+
+  acc_grad_batches:
+    values:
+      - 4
+      - 8
+      - 16
+      - 32
+    distribution: categorical
+
+  dropout:
+    distribution: uniform
+    max: 0.5
+    min: 0.1
+
+  max_epochs:
+    values:
+      - 8
+      - 16
+      - 32
+      - 48
+    distribution: categorical
+
+  
+    
+  # og_path:
+  #   values:
+  #     - ./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth
+  #   distribution: categorical
+  # seed:
+  #   max: 2
+  #   min: 1
+  #   distribution: int_uniform
+  seed:
+    values:
+      - 32585
+      - 42
+
+  

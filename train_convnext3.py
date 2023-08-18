@@ -176,6 +176,7 @@ class ConvNeXt(pl.LightningModule):
         
         self.log('test_plcc', plcc,sync_dist=True)
         self.log('test_spearman', spearman,sync_dist=True)
+        self.log('test_score', (plcc+spearman)/2,sync_dist=True)
         self.log('test_rmse', rmse,sync_dist=True)
 
 
@@ -199,6 +200,16 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=-1, help='Random seed. for reproducibility. Note final model is worse with seed set.')
     parser.add_argument('--wdb_project_name', default='luka_vra', help='Weights and Biases project name.')
     parser.add_argument('--acc_grad_batches', type=int, default=8, help='Accumulate gradients over n batches.')
+    #experiment_name
+    parser.add_argument('--experiment_name', default='convnext_xlarge_384_in22ft1k', help='Experiment name.')
+    parser.add_argument('--wandb_resume_version', default='latest', help='Wandb resume version.')
+    parser.add_argument('--num_nodes', type=int, default=1, help='Number of nodes.')
+    #devices array
+    parser.add_argument('--devices', nargs='+', default=[0,1], help='Devices to train on.')
+    #drop out
+    parser.add_argument('--dropout', type=float, default=0.1, help='Dropout rate.')
+    #max_epochs
+    parser.add_argument('--max_epochs', type=int, default=33, help='Max epochs.')
 
     #parser.add_argument('--test_labels_dir', default='/d/hpc/projects/FRI/ldragar/label/', help='Path to the test labels directory.')
 
@@ -214,6 +225,8 @@ if __name__ == '__main__':
     seed = args.seed
     wdb_project_name = args.wdb_project_name
     accumulate_grad_batches = args.acc_grad_batches
+    max_epochs = args.max_epochs
+    
 
     #cp_save_dir = args.cp_save_dir
     #test_labels_dir = args.test_labels_dir
@@ -270,11 +283,12 @@ if __name__ == '__main__':
         break
     
 
-    wandb_logger = WandbLogger(project=wdb_project_name, name='ConvNext_final')
+    wandb_logger = WandbLogger(name=args.experiment_name, version=args.wandb_resume_version, resume="must")
+
     
 
     #convnext_xlarge_384_in22ft1k
-    model=ConvNeXt(og_path,model_name='convnext_xlarge_384_in22ft1k', dropout=0.1)
+    model=ConvNeXt(og_path,model_name='convnext_xlarge_384_in22ft1k', dropout=args.dropout)
 
    
    
@@ -305,9 +319,9 @@ if __name__ == '__main__':
 
 
     trainer = pl.Trainer(accelerator='gpu', strategy='ddp',
-                        num_nodes=1,
-                        devices=[0,1],
-                        max_epochs=33, #SHOULD BE enough
+                        num_nodes=args.num_nodes,
+                        devices=args.devices,
+                        max_epochs=max_epochs,
                         log_every_n_steps=200,
                         callbacks=[
                             # EarlyStopping(monitor="val_loss", 

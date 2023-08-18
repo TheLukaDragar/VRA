@@ -3,7 +3,7 @@ import os
 import warnings
 
 print("importing modules")
-from dataset_tool import RandomSeqFaceFramesDataset
+from dataset_tool import RandomSeqFaceFramesDataset, FaceFramesSeqPredictionDatasetFinal
 from dataset_tool import build_transforms
 
 print("imported dataset_1")
@@ -24,7 +24,6 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 
 print("imported pytorch_lightning callbacks")
 import argparse
-from IQAloss import IQALoss
 
 
 from timm import create_model
@@ -43,29 +42,24 @@ import numpy as np
 from lightning.pytorch import seed_everything
 
 
-def train_val_test_split(
-    dataset, train_prop=0.7, val_prop=0.2, test_prop=0.1, seed=None
-):
+def train_val_split(dataset, train_prop=0.8, val_prop=0.2, seed=None):
     assert (
-        0 <= train_prop <= 1 and 0 <= val_prop <= 1 and 0 <= test_prop <= 1
+        0 <= train_prop <= 1 and 0 <= val_prop <= 1
     ), "Proportions must be between 0 and 1"
-    assert (
-        round(train_prop + val_prop + test_prop, 10) == 1
-    ), "Proportions must sum to 1"
+    assert round(train_prop + val_prop, 10) == 1, "Proportions must sum to 1"
 
     total_length = len(dataset)
     train_length = int(train_prop * total_length)
     val_length = int(val_prop * total_length)
-    test_length = total_length - train_length - val_length
 
     if seed is not None:
         return random_split(
             dataset,
-            [train_length, val_length, test_length],
+            [train_length, val_length],
             generator=torch.Generator().manual_seed(seed),
         )
     else:
-        return random_split(dataset, [train_length, val_length, test_length])
+        return random_split(dataset, [train_length, val_length])
 
 
 class ConvNeXt(pl.LightningModule):
@@ -81,16 +75,6 @@ class ConvNeXt(pl.LightningModule):
         self.backbone = torch.nn.DataParallel(self.backbone)
         self.backbone.load_state_dict(torch.load(og_path))
 
-        #freeze thirdt of the layers
-        total_layers = len(list(self.backbone.parameters()))
-        print(f"total layers {total_layers}")
-        for i, param in enumerate(self.backbone.parameters()):
-            if i < total_layers / 2:
-                param.requires_grad = False
-
-            
-                
-
         self.backbone = self.backbone.module
         self.backbone.head.fc = nn.Identity()
 
@@ -103,19 +87,9 @@ class ConvNeXt(pl.LightningModule):
         self.fc4 = nn.Linear(64, 1)
         self.mse = nn.MSELoss()
 
-        # self.iqa_loss = IQALoss(
-        #     loss_type="norm-in-norm",
-        #     alpha=[1, 0],
-        #     beta=[0.1, 0.1, 1],
-        #     p=1,
-        #     q=2,
-        #     monotonicity_regularization=True,
-        #     gamma=0.1,
-        #     detach=False,
-        # )
-
-        self.test_preds = []
-        self.test_labels = []
+        self.test_preds = {}
+        self.test_labels = {}
+        self.current_test_set = None
 
         # Initialize PearsonCorrCoef metric
         self.pearson_corr_coef = torchmetrics.PearsonCorrCoef().to(self.device)
@@ -125,42 +99,13 @@ class ConvNeXt(pl.LightningModule):
 
         # ddp debug
         self.seen_samples = set()
+        self.seen_sample_names = set()
 
         self.save_hyperparameters()
 
     def RMSE(self, preds, y):
         mse = self.mse(preds.view(-1), y.view(-1))
         return torch.sqrt(mse)
-
-    def norm_loss_with_normalization(self, pred, target, p, q):
-        """
-        Args:
-            pred (Tensor): of shape (N, 1). Predicted tensor.
-            target (Tensor): of shape (N, 1). Ground truth tensor.
-        """
-        batch_size = pred.shape[0]
-        if batch_size > 1:
-            vx = pred - pred.mean()
-            vy = target - target.mean()
-            scale = np.power(2, p) * np.power(batch_size, max(0, 1 - p / q))  # p, q>0
-            norm_pred = torch.nn.functional.normalize(vx, p=q, dim=0)
-            norm_target = torch.nn.functional.normalize(vy, p=q, dim=0)
-            loss = torch.norm(norm_pred - norm_target, p=p) / scale
-        else:
-            loss = torch.nn.functional.l1_loss(pred, target)
-        return loss.mean()
-
-    def kl_divergence_loss(self, Q, Q_hat):
-        # Compute W_i using softmax
-        W_i = torch.exp(Q) / torch.sum(torch.exp(Q), dim=0)
-
-        # Compute W_hat_i using softmax
-        W_hat_i = torch.exp(Q_hat) / torch.sum(torch.exp(Q_hat), dim=0)
-
-        # Compute the KL-divergence loss according to the given formula
-        loss = torch.sum(W_hat_i * torch.log(W_hat_i / W_i))
-
-        return loss
 
     def forward(self, x):
         batch_size, sequence_length, channels, height, width = x.shape
@@ -191,41 +136,9 @@ class ConvNeXt(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         preds = self(x)
-        # loss = self.RMSE(preds, y)
-        iqaloss = self.norm_loss_with_normalization(preds, y.unsqueeze(1), p=1, q=2)
-        kldivloss = self.kl_divergence_loss(preds, y)
-
-        rmseloss = self.RMSE(preds, y)
-
-        loss = 0.5 * iqaloss + 0.1 * kldivloss + 0.4 * rmseloss
-
-        # print(f"shape of preds {preds.shape} shape of y {y.shape}")
-        # print(
-        #     f"loss {loss} iqaloss {iqaloss} kldivloss {kldivloss} rmseloss {rmseloss}"
-        # )
+        loss = self.RMSE(preds, y)
         self.log(
             "train_loss", loss.item(), on_epoch=True, prog_bar=True, sync_dist=True
-        )
-        self.log(
-            "train_iqaloss",
-            iqaloss.item(),
-            on_epoch=True,
-            prog_bar=True,
-            sync_dist=True,
-        )
-        self.log(
-            "train_kldivloss",
-            kldivloss.item(),
-            on_epoch=True,
-            prog_bar=True,
-            sync_dist=True,
-        )
-        self.log(
-            "train_rmseloss",
-            rmseloss.item(),
-            on_epoch=True,
-            prog_bar=True,
-            sync_dist=True,
         )
 
         return loss
@@ -233,15 +146,7 @@ class ConvNeXt(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         x, y = batch
         preds = self(x)
-        # print(f"val shape of preds {preds.shape} shape of y {y.shape}")
-
-        # loss = self.RMSE(preds, y)
-        iqaloss = self.norm_loss_with_normalization(preds, y.unsqueeze(1), p=1, q=2)
-        kldivloss = self.kl_divergence_loss(preds, y)
-        rmseloss = self.RMSE(preds, y)
-        loss = 0.5 * iqaloss + 0.1 * kldivloss + 0.4 * rmseloss
-        
-
+        loss = self.RMSE(preds, y)
         self.log("val_loss", loss.item(), on_epoch=True, prog_bar=True, sync_dist=True)
 
     def configure_optimizers(self):
@@ -255,32 +160,53 @@ class ConvNeXt(pl.LightningModule):
         return [optimizer], [lr_scheduler]
 
     def test_step(self, batch, batch_idx):
-        x, y = batch
+        x, y, name = batch
         # Check for duplicates THIS IS FOR DDP DEBUGGING
-        for sample in x:
-            sample_hash = hash(sample.cpu().numpy().tostring())
-            if sample_hash in self.seen_samples:
-                print("Duplicate sample detected:", sample)
-                warnings.warn("Duplicate sample detected!!! ")
+        # for sample in x:
+        #     sample_hash = hash(sample.cpu().numpy().tostring())
+        #     if sample_hash in self.seen_samples:
+        #         print("Duplicate sample detected:", sample)
+        #         warnings.warn("Duplicate sample detected!!! ")
+        #     else:
+        #         # print("New sample detected:", str(sample_hash),str(batch_idx))
+        #         self.seen_samples.add(sample_hash)
+
+        for sample_name in name:
+            if sample_name in self.seen_sample_names:
+                print("Duplicate sample name detected:", sample_name)
+                warnings.warn("Duplicate sample name detected!!! ")
             else:
-                # print("New sample detected:", str(sample_hash),str(batch_idx))
-                self.seen_samples.add(sample_hash)
+                # print("New sample name detected:", sample_name)
+                self.seen_sample_names.add(sample_name)
+                # print("New sample name detected:", sample_name)
+
         preds = self(x)
-        self.test_preds.append(preds)
-        self.test_labels.append(y)
+
+        if self.current_test_set not in self.test_preds:
+            self.test_preds[self.current_test_set] = []
+
+        self.test_preds[self.current_test_set].append(preds)
+
+        if self.current_test_set not in self.test_labels:
+            self.test_labels[self.current_test_set] = []
+
+        self.test_labels[self.current_test_set].append(y)
 
     def on_test_epoch_end(self):
-        test_preds = torch.cat(self.test_preds)
-        test_labels = torch.cat(self.test_labels)
+        test_preds = torch.cat(self.test_preds[self.current_test_set])
+        test_labels = torch.cat(self.test_labels[self.current_test_set])
         test_preds = test_preds.view(-1)
         plcc = self.pearson_corr_coef(test_preds, test_labels)
         spearman = self.spearman_corr_coef(test_preds, test_labels)
         mse_log = self.mse_log(test_preds, test_labels)
         rmse = torch.sqrt(mse_log)
 
-        self.log("test_plcc", plcc, sync_dist=True)
-        self.log("test_spearman", spearman, sync_dist=True)
-        self.log("test_rmse", rmse, sync_dist=True)
+        self.log(self.current_test_set + "_plcc", plcc, sync_dist=True)
+        self.log(self.current_test_set + "_spearman", spearman, sync_dist=True)
+        self.log(
+            self.current_test_set + "_score", (plcc + spearman) / 2, sync_dist=True
+        )
+        self.log(self.current_test_set + "_rmse", rmse, sync_dist=True)
 
     def get_predictions(self):
         return torch.cat(self.test_preds).numpy()
@@ -301,6 +227,12 @@ if __name__ == "__main__":
         default="./label/train_set.csv",
         help="Path to the labels train file.",
     )
+    # test_labels_dir
+    parser.add_argument(
+        "--test_labels_dir",
+        default="/d/hpc/projects/FRI/ldragar/code/competition_end_groundtruth/",
+        help="Path to the test labels directory.",
+    )
     parser.add_argument(
         "--og_checkpoint",
         default="./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth",
@@ -312,8 +244,8 @@ if __name__ == "__main__":
         default="./convnext_models/",
         help="Path to save the final model.",
     )
-    parser.add_argument("--batch_size", type=int, default=12, help="Batch size.")
-    parser.add_argument("--seq_len", type=int, default=4, help="Sequence length.")
+    parser.add_argument("--batch_size", type=int, default=2, help="Batch size.")
+    parser.add_argument("--seq_len", type=int, default=5, help="Sequence length.")
     parser.add_argument(
         "--seed",
         type=int,
@@ -325,6 +257,30 @@ if __name__ == "__main__":
         default="luka_vra",
         help="Weights and Biases project name.",
     )
+    parser.add_argument(
+        "--acc_grad_batches",
+        type=int,
+        default=8,
+        help="Accumulate gradients over n batches.",
+    )
+    # experiment_name
+    parser.add_argument(
+        "--experiment_name",
+        default="convnext_xlarge_384_in22ft1k",
+        help="Experiment name.",
+    )
+    parser.add_argument(
+        "--wandb_resume_version", default="None", help="Wandb resume version."
+    )
+    parser.add_argument("--num_nodes", type=int, default=1, help="Number of nodes.")
+    # devices array
+    parser.add_argument(
+        "--devices", nargs="+", default=[0, 1], help="Devices to train on."
+    )
+    # drop out
+    parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate.")
+    # max_epochs
+    parser.add_argument("--max_epochs", type=int, default=33, help="Max epochs.")
 
     # parser.add_argument('--test_labels_dir', default='/d/hpc/projects/FRI/ldragar/label/', help='Path to the test labels directory.')
 
@@ -339,13 +295,16 @@ if __name__ == "__main__":
     seq_len = args.seq_len
     seed = args.seed
     wdb_project_name = args.wdb_project_name
+    accumulate_grad_batches = args.acc_grad_batches
+    max_epochs = args.max_epochs
 
     # cp_save_dir = args.cp_save_dir
     # test_labels_dir = args.test_labels_dir
 
-    # if seed != -1:
+    if seed != -1:
+        seed_everything(seed, workers=True)
 
-    #     seed_everything(seed, workers=True)
+    # seed only data
 
     transform_train, transform_test = build_transforms(
         384,
@@ -358,38 +317,104 @@ if __name__ == "__main__":
     print("loading dataset")
 
     face_frames_dataset = RandomSeqFaceFramesDataset(
-        dataset_root, labels_file, transform=transform_train, seq_len=seq_len, seed=seed
+        dataset_root, labels_file, transform=transform_train, seq_len=seq_len
+    )
+
+    face_frames_dataset_test1 = FaceFramesSeqPredictionDatasetFinal(
+        os.path.join(args.test_labels_dir, "Test1-labels.txt"),
+        dataset_root,
+        transform=transform_test,
+        seq_len=seq_len,
+    )
+    face_frames_dataset_test2 = FaceFramesSeqPredictionDatasetFinal(
+        os.path.join(args.test_labels_dir, "Test2-labels.txt"),
+        dataset_root,
+        transform=transform_test,
+        seq_len=seq_len,
+    )
+    face_frames_dataset_test3 = FaceFramesSeqPredictionDatasetFinal(
+        os.path.join(args.test_labels_dir, "Test3-labels.txt"),
+        dataset_root,
+        transform=transform_test,
+        seq_len=seq_len,
     )
 
     print("splitting dataset")
-    train_ds, val_ds, test_ds = train_val_test_split(face_frames_dataset, seed=seed)
+    train_ds, val_ds = train_val_split(face_frames_dataset)
 
-    print(
-        f"created {len(train_ds)} train examples and {len(val_ds)} val examples and {len(test_ds)} test examples"
-    )
-
-    # print first 5 labels to check if split is correct
-    print("train labels")
+    print("first 5 train labels")
     for i in range(5):
         print(train_ds[i][1])
-    print("val labels")
+    print("first 5 val labels")
     for i in range(5):
         print(val_ds[i][1])
+    print("first 5 test1 labels")
+    for i in range(5):
+        print(face_frames_dataset_test1[i][1])
+    print("first 5 test2 labels")
+    for i in range(5):
+        print(face_frames_dataset_test2[i][1])
+    print("first 5 test3 labels")
+    for i in range(5):
+        print(face_frames_dataset_test3[i][1])
 
     print("loading dataloader")
 
-    train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=2)
-    val_dl = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=2)
-    test_dl = DataLoader(test_ds, batch_size=batch_size, shuffle=False, num_workers=2)
+    train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=4)
+    val_dl = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=4)
 
-    if len(test_dl) % batch_size != 0:
-        warnings.warn(
-            "Uneven inputs detected! With multi-device settings, DistributedSampler may replicate some samples to ensure all devices have the same batch size. TEST WILL NOT BE ACCURATE CRITICAL!"
-        )
-        # exit(1)
+    test_dl1 = DataLoader(
+        face_frames_dataset_test1, batch_size=1, shuffle=False, num_workers=4
+    )
+    test_dl2 = DataLoader(
+        face_frames_dataset_test2, batch_size=1, shuffle=False, num_workers=4
+    )
+    test_dl3 = DataLoader(
+        face_frames_dataset_test3, batch_size=1, shuffle=False, num_workers=4
+    )
+
+    # if len(test_dl1) % batch_size != 0 or len(test_dl2) % batch_size != 0 or len(test_dl3) % batch_size != 0:
+    #     warnings.warn("Uneven inputs detected! With multi-device settings, DistributedSampler may replicate some samples to ensure all devices have the same batch size. TEST WILL NOT BE ACCURATE CRITICAL!")
+    #     exit(1)
 
     print(
-        f"loaded {len(train_dl)} train batches and {len(val_dl)} val batches and {len(test_dl)} test batches  of size {train_dl.batch_size}"
+        "train dataset will be split into",
+        len(train_dl),
+        "batches",
+        "each batch will have",
+        batch_size,
+        "samples",
+    )
+    print(
+        "val dataset will be split into",
+        len(val_dl),
+        "batches",
+        "each batch will have",
+        batch_size,
+        "samples",
+    )
+    print(
+        "each gpu will process batch size of",
+        batch_size,
+        "samples",
+        "global batch size will be",
+        batch_size * len(args.devices),
+    )
+
+    if len(train_dl) % batch_size != 0 or len(val_dl) % batch_size != 0:
+        warnings.warn(
+            "Uneven inputs detected! With multi-device settings, DistributedSampler may replicate some samples to ensure all devices have the same batch size."
+        )
+
+    print(f"loaded {len(train_dl)} train batches and {len(val_dl)} val batches")
+    print(
+        f"loaded {len(test_dl1)} test batches for test set 1 of {len(face_frames_dataset_test1)} examples"
+    )
+    print(
+        f"loaded {len(test_dl2)} test batches for test set 2 of {len(face_frames_dataset_test2)} examples"
+    )
+    print(
+        f"loaded {len(test_dl3)} test batches for test set 3 of {len(face_frames_dataset_test3)} examples"
     )
 
     # print first train example
@@ -400,10 +425,17 @@ if __name__ == "__main__":
         print(y)
         break
 
-    wandb_logger = WandbLogger(project=wdb_project_name, name="ConvNext")
+    if args.wandb_resume_version == "None":
+        wandb_logger = WandbLogger(name=args.experiment_name, project=wdb_project_name)
+    else:
+        wandb_logger = WandbLogger(
+            name=args.experiment_name, version=args.wandb_resume_version, resume="must"
+        )
 
     # convnext_xlarge_384_in22ft1k
-    model = ConvNeXt(og_path, model_name="convnext_xlarge_384_in22ft1k", dropout=0.1)
+    model = ConvNeXt(
+        og_path, model_name="convnext_xlarge_384_in22ft1k", dropout=args.dropout
+    )
 
     wandb_logger.watch(model, log="all", log_freq=100)
     # log batch size
@@ -412,6 +444,10 @@ if __name__ == "__main__":
     wandb_logger.log_hyperparams({"seq_len": seq_len})
     # log seed
     wandb_logger.log_hyperparams({"seed": seed})
+    # log accumulate_grad_batches
+    wandb_logger.log_hyperparams({"accumulate_grad_batches": accumulate_grad_batches})
+    # devices
+    wandb_logger.log_hyperparams({"devices": args.devices})
 
     wandb_run_id = str(wandb_logger.version)
     if wandb_run_id == "None":
@@ -429,9 +465,9 @@ if __name__ == "__main__":
     trainer = pl.Trainer(
         accelerator="gpu",
         strategy="ddp",
-        num_nodes=1,
-        devices=[0, 1],
-        max_epochs=33,  # SHOULD BE enough
+        num_nodes=args.num_nodes,
+        devices=args.devices,
+        max_epochs=max_epochs,
         log_every_n_steps=200,
         callbacks=[
             # EarlyStopping(monitor="val_loss",
@@ -441,8 +477,8 @@ if __name__ == "__main__":
             # checkpoint_callback
         ],
         logger=wandb_logger,
-        accumulate_grad_batches=8,
-        # deterministic=seed != -1,
+        accumulate_grad_batches=accumulate_grad_batches,
+        deterministic=seed != -1,
     )
 
     print("start training")
@@ -450,9 +486,26 @@ if __name__ == "__main__":
     trainer.fit(model, train_dl, val_dl)
     # Test the model
     print("testing current model")
-    trainer.test(model, test_dl)
+
+    model.current_test_set = "test_set1"
+    trainer.test(model, test_dl1)
+    model.current_test_set = "test_set2"
+    trainer.test(model, test_dl2)
+    model.current_test_set = "test_set3"
+    trainer.test(model, test_dl3)
 
     if trainer.global_rank == 0:
+        test_set1_score = wandb_logger.experiment.summary["test_set1_score"]
+        test_set2_score = wandb_logger.experiment.summary["test_set2_score"]
+        test_set3_score = wandb_logger.experiment.summary["test_set3_score"]
+        avg_score = (test_set1_score + test_set2_score + test_set3_score) / 3
+        print(f"test_set1_score: {test_set1_score}")
+        print(f"test_set2_score: {test_set2_score}")
+        print(f"test_set3_score: {test_set3_score}")
+        print(f"final_score: {avg_score}")
+
+        # Log the average score to WandB
+        wandb.log({"final_score": avg_score})
         # save model
         model_path = os.path.join(final_model_save_dir, wandb_run_id)
         if not os.path.exists(model_path):
