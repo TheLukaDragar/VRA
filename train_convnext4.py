@@ -148,11 +148,17 @@ class ConvNeXt(pl.LightningModule):
         preds = self(x)
         loss = self.RMSE(preds, y)
         self.log("val_loss", loss.item(), on_epoch=True, prog_bar=True, sync_dist=True)
-        #if nan crash
-        if torch.isnan(loss):
-            print("loss is nan")
+        #if loss is nan.0 then stop training
+        if loss.item() == float('nan'):
+            print("val_loss is nan.0 stopping training")
             exit(1)
-            
+        if loss.item() == float('inf'):
+            print("val_loss is inf stopping training")
+            exit(1)
+
+    
+       
+
 
     def configure_optimizers(self):
         optimizer = AdamW(self.parameters(), lr=2e-5)
