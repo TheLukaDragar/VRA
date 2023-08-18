@@ -3,3 +3,5 @@ __pycache__
 luka_vra
 convnext_models
 eva_models
+wandb/latest-run
+wandb/*
