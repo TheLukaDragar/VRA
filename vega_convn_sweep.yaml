@@ -49,9 +49,9 @@ parameters:
 
   accumulate_grad_batches:
     values:
+      - 1
       - 4
       - 8
-      - 16
     distribution: categorical
 
   dropout:
@@ -78,7 +78,7 @@ parameters:
   seed:
     values:
       - 32585
-      - 42
+      - 69
 
 
   # devices:
