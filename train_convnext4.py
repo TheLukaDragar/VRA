@@ -148,6 +148,8 @@ class ConvNeXt(pl.LightningModule):
         x, y = batch
         preds = self(x)
         loss = self.RMSE(preds, y)
+        loss_value = loss.item()
+
         self.log("val_loss", loss.item(), on_epoch=True, prog_bar=True, sync_dist=True)
         #if loss is nan.0 then stop training
         if math.isnan(loss_value):
