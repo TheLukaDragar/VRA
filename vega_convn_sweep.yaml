@@ -57,7 +57,7 @@ parameters:
     distribution: categorical
 
   og_path:
-    values:
+    value:
       - ./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth
     distribution: constant
 
@@ -67,11 +67,11 @@ parameters:
       - 42
 
   devices:
-    values:
+    value:
       - [0,1,2,3]
     distribution: constant
 
   dataset_root:
-    values:
+    value:
       - /ceph/hpc/data/st2207-pgp-users/ldragar/dataset/
     distribution: constant
