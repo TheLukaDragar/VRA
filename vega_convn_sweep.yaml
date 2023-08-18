@@ -8,6 +8,9 @@ command:
   - python3
   - ${program}
   - ${args}
+  - --devices [0,1,2,3]
+  - --dataset_root /ceph/hpc/data/st2207-pgp-users/ldragar/dataset/
+
 
 method: random
 metric:
@@ -55,22 +58,22 @@ parameters:
       - 48
     distribution: categorical
 
-  og_checkpoint:
-    value:
-      - ./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth
-    distribution: constant
+  # og_checkpoint:
+  #   value:
+  #     - "./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth"
+  #   distribution: constant
 
   seed:
     values:
       - 32585
       - 42
 
-  devices:
-    value:
-      - [0,1,2,3]
-    distribution: constant
+  # devices:
+  #   value:
+  #     - [0,1,2,3]
+  #   distribution: constant
 
-  dataset_root:
-    value:
-      - /ceph/hpc/data/st2207-pgp-users/ldragar/dataset/
-    distribution: constant
+  # dataset_root:
+  #   value:
+  #     - "/ceph/hpc/data/st2207-pgp-users/ldragar/dataset/"
+  #   distribution: constant
