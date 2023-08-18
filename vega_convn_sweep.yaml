@@ -33,7 +33,6 @@ parameters:
       - 1
       - 2
       - 4
-      - 8
     distribution: categorical
     
     
@@ -42,8 +41,7 @@ parameters:
       - 1
       - 2
       - 4
-      - 8
-      - 16
+      - 10
 
     distribution: categorical
 
