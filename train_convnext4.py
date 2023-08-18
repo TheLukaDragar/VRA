@@ -230,7 +230,7 @@ if __name__ == "__main__":
     # test_labels_dir
     parser.add_argument(
         "--test_labels_dir",
-        default="/d/hpc/projects/FRI/ldragar/code/competition_end_groundtruth/",
+        default="./competition_end_groundtruth/",
         help="Path to the test labels directory.",
     )
     parser.add_argument(
