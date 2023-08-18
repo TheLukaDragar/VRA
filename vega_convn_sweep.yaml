@@ -8,7 +8,10 @@ command:
   - python3
   - ${program}
   - "--devices"
-  - "0 1 2 3"
+  - "0"
+  - "1"
+  - "2"
+  - "3"
   - "--dataset_root"
   - "/ceph/hpc/data/st2207-pgp-users/ldragar/dataset/"
   - ${args}
