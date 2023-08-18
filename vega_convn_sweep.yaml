@@ -1,5 +1,5 @@
 project: luka_vra
-name: my_sweep 
+name: vega1 
 program: train_convnext4.py
 
 command:
@@ -68,13 +68,10 @@ parameters:
 
   devices:
     values:
-    - [0,1,2,3]
+      - [0,1,2,3]
     distribution: constant
 
   dataset_root:
     values:
       - /ceph/hpc/data/st2207-pgp-users/ldragar/dataset/
     distribution: constant
-  
-
-    
