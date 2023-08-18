@@ -67,7 +67,7 @@ parameters:
       - 42
 
   devices:
-    value:
+    values:
     - [0,1,2,3]
     distribution: constant
 
