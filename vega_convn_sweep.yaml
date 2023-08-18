@@ -6,10 +6,9 @@ command:
   - ${env}
   # - echo
   - python3
-  - ${program}
+  - ${program} --devices [0,1,2,3] --dataset_root /ceph/hpc/data/st2207-pgp-users/ldragar/dataset/ 
   - ${args}
-  - --devices [0,1,2,3]
-  - --dataset_root /ceph/hpc/data/st2207-pgp-users/ldragar/dataset/
+ 
 
 
 method: random
