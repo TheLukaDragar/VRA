@@ -32,7 +32,7 @@ parameters:
       - 8
     distribution: categorical
 
-  acc_grad_batches:
+  accumulate_grad_batches:
     values:
       - 4
       - 8

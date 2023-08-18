@@ -255,7 +255,7 @@ if __name__ == "__main__":
         help="Weights and Biases project name.",
     )
     parser.add_argument(
-        "--acc_grad_batches",
+        "--accumulate_grad_batches",
         type=int,
         default=8,
         help="Accumulate gradients over n batches.",
@@ -292,7 +292,7 @@ if __name__ == "__main__":
     seq_len = args.seq_len
     seed = args.seed
     wdb_project_name = args.wdb_project_name
-    accumulate_grad_batches = args.acc_grad_batches
+    accumulate_grad_batches = args.accumulate_grad_batches
     max_epochs = args.max_epochs
 
     # cp_save_dir = args.cp_save_dir
@@ -441,7 +441,7 @@ if __name__ == "__main__":
     # log seed
     wandb_logger.log_hyperparams({"seed": seed})
     # log accumulate_grad_batches
-    wandb_logger.log_hyperparams({"acc_grad_batches": accumulate_grad_batches})
+    wandb_logger.log_hyperparams({"accumulate_grad_batches": accumulate_grad_batches})
     # devices
     wandb_logger.log_hyperparams({"devices": args.devices})
 

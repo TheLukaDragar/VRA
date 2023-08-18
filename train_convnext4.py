@@ -258,7 +258,7 @@ if __name__ == "__main__":
         help="Weights and Biases project name.",
     )
     parser.add_argument(
-        "--acc_grad_batches",
+        "--accumulate_grad_batches",
         type=int,
         default=8,
         help="Accumulate gradients over n batches.",
@@ -295,7 +295,7 @@ if __name__ == "__main__":
     seq_len = args.seq_len
     seed = args.seed
     wdb_project_name = args.wdb_project_name
-    accumulate_grad_batches = args.acc_grad_batches
+    accumulate_grad_batches = args.accumulate_grad_batches
     max_epochs = args.max_epochs
 
     # cp_save_dir = args.cp_save_dir
