@@ -144,8 +144,8 @@ class Eva(pl.LightningModule):
                 # L = LMAE + α · LP LCC + β · Lrank (
                 return (
                     self.MAE(pred, target)
-                    #+ alpha * self.pearson_corr_coef_loss(pred, target)
-                    #+ beta * self.pairwise_ranking_loss(pred, target) #TODO
+                    # + alpha * self.pearson_corr_coef_loss(pred, target)
+                    # + beta * self.pairwise_ranking_loss(pred, target) #TODO
                 )
 
             self.loss_fn = custom_loss
@@ -161,7 +161,6 @@ class Eva(pl.LightningModule):
     def MAE(self, preds, y):
         return self.mae(preds.view(-1), y.view(-1))
 
-
     def pearson_corr_coef_loss(self, preds, y):
         plcc = self.pearson_corr_coef(preds.view(-1), y.view(-1))
         loss = 1 - torch.abs(plcc)
@@ -170,7 +169,9 @@ class Eva(pl.LightningModule):
     def kl_div_loss(self, preds, target):
         preds_softmax = torch.nn.functional.softmax(preds, dim=-1)
         target_softmax = torch.nn.functional.softmax(target, dim=-1)
-        loss = torch.sum(target_softmax * torch.log(target_softmax / preds_softmax), dim=-1)
+        loss = torch.sum(
+            target_softmax * torch.log(target_softmax / preds_softmax), dim=-1
+        )
         loss = torch.mean(loss)
         return loss
 
@@ -246,7 +247,11 @@ class Eva(pl.LightningModule):
         rmse_loss = self.RMSE(preds, y)
         loss = self.loss_fn(preds, y)
         self.log(
-            "val_rmse_loss", rmse_loss.item(), on_epoch=True, prog_bar=True, sync_dist=True
+            "val_rmse_loss",
+            rmse_loss.item(),
+            on_epoch=True,
+            prog_bar=True,
+            sync_dist=True,
         )
         self.log("val_loss", loss.item(), on_epoch=True, prog_bar=True, sync_dist=True)
 
@@ -337,7 +342,7 @@ if __name__ == "__main__":
     # test_labels_dir
     parser.add_argument(
         "--test_labels_dir",
-        default="/d/hpc/projects/FRI/ldragar/code/competition_end_groundtruth/",
+        default="./competition_end_groundtruth/",
         help="Path to the test labels directory.",
     )
     # parser.add_argument(
@@ -397,7 +402,7 @@ if __name__ == "__main__":
         help="Number of sequences to from each video.",
     )
 
-    #loss
+    # loss
     parser.add_argument(
         "--loss",
         default="rmse",
@@ -563,7 +568,9 @@ if __name__ == "__main__":
         )
 
     model = Eva(
-        model_name="eva_large_patch14_336.in22k_ft_in22k_in1k", dropout=args.dropout, loss=args.loss
+        model_name="eva_large_patch14_336.in22k_ft_in22k_in1k",
+        dropout=args.dropout,
+        loss=args.loss,
     )
 
     wandb_logger.watch(model, log="all", log_freq=100)
