@@ -32,7 +32,6 @@ parameters:
     values:
       - 1
       - 2
-      - 4
     distribution: categorical
     
     
@@ -55,7 +54,6 @@ parameters:
     values:
       - 0.1
       - 0.5
-      - 0.7
 
   max_epochs:
     values:
@@ -81,7 +79,7 @@ parameters:
 
   seed:
     values:
-      - 26
+      - 69
 
 
 
