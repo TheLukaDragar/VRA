@@ -79,7 +79,7 @@ def train_val_split(dataset, num_slices, train_prop=0.8, val_prop=0.2, seed=None
 class Eva(pl.LightningModule):
     def __init__(
         self,
-        model_name="eva_large_patch14_336.in22k_ft_in22k_in1k",
+        model_name="eva02_large_patch14_448.mim_m38m_ft_in1k",
         dropout=0.1,
         loss="rmse",
     ):
@@ -353,7 +353,7 @@ if __name__ == "__main__":
     # parser.add_argument('--cp_save_dir', default='/d/hpc/projects/FRI/ldragar/checkpoints/', help='Path to save checkpoints.')
     parser.add_argument(
         "--final_model_save_dir",
-        default="./eva_models/",
+        default="./eva2_models/",
         help="Path to save the final model.",
     )
 
@@ -379,7 +379,7 @@ if __name__ == "__main__":
     # experiment_name
     parser.add_argument(
         "--experiment_name",
-        default="eva_large_patch14_336.in22k_ft_in22k_in1k",
+        default="eva02_large_patch14_448.mim_m38m_ft_in1k",
         help="Experiment name.",
     )
     parser.add_argument(
@@ -434,12 +434,14 @@ if __name__ == "__main__":
     # seed only data
 
     transform_train, transform_test = build_transforms(
-        336,
-        336,
+        448,
+        448,
         max_pixel_value=255.0,
-        norm_mean=[0.485, 0.456, 0.406],
-        norm_std=[0.229, 0.224, 0.225],
+        norm_mean=[0.4815, 0.4578, 0.4082],
+        norm_std=[0.2686, 0.2613, 0.2758],
     )
+ 
+
 
     print("loading dataset")
 
@@ -568,7 +570,7 @@ if __name__ == "__main__":
         )
 
     model = Eva(
-        model_name="eva_large_patch14_336.in22k_ft_in22k_in1k",
+        model_name="eva02_large_patch14_448.mim_m38m_ft_in1k",
         dropout=args.dropout,
         loss=args.loss,
     )
@@ -623,7 +625,7 @@ if __name__ == "__main__":
     # Test the model
     print("testing current model")
 
-    model.current_test_set = "test_set1"
+    model.current_test_set = "se"
     trainer.test(model, test_dl1)
     model.current_test_set = "test_set2"
     trainer.test(model, test_dl2)
