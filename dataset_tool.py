@@ -600,6 +600,80 @@ class FaceFramesSeqPredictionDatasetFinal(Dataset):
     def __len__(self):
         return len(self.video_dirs)
 
+
+class FaceFramesSeqPredictionDataset_middle_frames(Dataset):
+    """
+    Dataset for predicting MOS scores from a video directory.
+    It will return a list of frames from the video directory and the mos score.
+    """
+
+    def __init__(self, labels, dataset_root, transform=None, seq_len=5,seed=None):
+        self.video_list_file = labels
+        self.dataset_root = dataset_root
+        self.transform = transform
+        self.seq_len = seq_len
+        self.names = []
+        self.mos_labels = []
+
+        if seed is not None:
+            random.seed(seed)
+            
+
+        lines = []
+
+        with open(self.video_list_file, 'r') as f:
+            lines = [line.strip() for line in f]
+
+        #C1/3-1-2-submit-00000.mp4,4.2
+        for line in lines:
+            line = line.split(',')
+            self.names.append(line[0])
+            self.mos_labels.append(float(line[1]))
+
+
+        # Read the list of video directories from the provided file
+        self.video_dirs = [os.path.join(self.dataset_root, line) for line in self.names]
+
+    def __getitem__(self, index):
+        video_dir = self.video_dirs[index]
+        name = self.names[index]
+        mos_label = self.mos_labels[index]
+
+
+        frame_names = sorted(os.listdir(video_dir))
+        frame_count = len(frame_names)
+
+        # Choose a random starting frame and get the sequence of frames
+        start_frame = frame_count // 2
+        frame_sequence = frame_names[start_frame : start_frame + self.seq_len]
+
+        # print(f"Video directory: {video_dir}")
+        # print(f"Chosen start frame: {start_frame}")
+        # print(f"Chosen frame sequence: {frame_sequence}")
+
+
+        # Read and transform the frames
+        frames = []
+        for frame_name in frame_sequence:
+            frame_path = os.path.join(video_dir, frame_name)
+            frame = cv2.cvtColor(cv2.imread(frame_path, cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
+            if self.transform:
+                frame = self.transform(image=frame)["image"]
+            frames.append(frame)
+
+        # Pad the sequence if it has fewer frames than seq_len
+        while len(frames) < self.seq_len:
+            frames.append(torch.zeros_like(frames[-1]))
+
+        sequence = torch.stack(frames)
+        mos_label = torch.tensor(mos_label, dtype=torch.float32)
+
+
+        return sequence, mos_label, name
+
+    def __len__(self):
+        return len(self.video_dirs)
+
 class VideoFramesDataset_2(Dataset):
     def __init__(self, dataset_root, labels_file, transform=None, sequence_length=5):
         self.dataset_root = dataset_root

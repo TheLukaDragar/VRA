@@ -3,7 +3,7 @@ import os
 import warnings
 
 print("importing modules")
-from dataset_tool import RandomSeqFaceFramesDataset, FaceFramesSeqPredictionDatasetFinal
+from dataset_tool import RandomSeqFaceFramesDataset, FaceFramesSeqPredictionDataset_middle_frames
 from dataset_tool import build_transforms
 import math
 
@@ -434,29 +434,29 @@ if __name__ == "__main__":
     print("loading dataset")
 
     face_frames_dataset = RandomSeqFaceFramesDataset(
-        dataset_root, labels_file, transform=transform_train, seq_len=seq_len,seed=seed
+        dataset_root, labels_file, transform=transform_train, seq_len=seq_len,seed= seed if seed != -1 else None
     )
 
-    face_frames_dataset_test1 = FaceFramesSeqPredictionDatasetFinal(
+    face_frames_dataset_test1 = FaceFramesSeqPredictionDataset_middle_frames(
         os.path.join(args.test_labels_dir, "Test1-labels.txt"),
         dataset_root,
         transform=transform_test,
         seq_len=seq_len,
-        seed=seed
+        seed = seed if seed != -1 else None
     )
-    face_frames_dataset_test2 = FaceFramesSeqPredictionDatasetFinal(
+    face_frames_dataset_test2 = FaceFramesSeqPredictionDataset_middle_frames(
         os.path.join(args.test_labels_dir, "Test2-labels.txt"),
         dataset_root,
         transform=transform_test,
         seq_len=seq_len,
-        seed=seed
+        seed= seed if seed != -1 else None
     )
-    face_frames_dataset_test3 = FaceFramesSeqPredictionDatasetFinal(
+    face_frames_dataset_test3 = FaceFramesSeqPredictionDataset_middle_frames(
         os.path.join(args.test_labels_dir, "Test3-labels.txt"),
         dataset_root,
         transform=transform_test,
         seq_len=seq_len,
-        seed=seed
+       seed= seed if seed != -1 else None
     )
 
     print("splitting dataset")
@@ -633,51 +633,90 @@ if __name__ == "__main__":
         torch.save(model.state_dict(), os.path.join(model_path, f"{wandb_run_id}.pt"))
         print(f"finished training, saved model to {model_path}")
 
-    #     #PREDICTIONS
-    #     model.eval()  # set the model to evaluation mode
+        #PREDICTIONS
+        model.eval()  # set the model to evaluation mode
 
-    #     model = model.to('cuda:0')
+        model = model.to('cuda:0')
 
-    #     stages = ['1','2','3']
-    #     #get wandb run id
+        stages = ['1','2','3']
+        #get wandb run id
 
-    #     resultsdir = os.path.join('/d/hpc/projects/FRI/ldragar/results/', wandb_run_id)
-    #     if not os.path.exists(resultsdir):
-    #         os.makedirs(resultsdir)
+        resultsdir = os.path.join('./results/', wandb_run_id)
+        if not os.path.exists(resultsdir):
+            os.makedirs(resultsdir)
 
-    #     for stage in stages:
-    #         name='test_set'+stage+'.txt'
-    #         test_labels = []
-    #         test_names = []
 
-    #         #use seq len
+        scores=[]
 
-    #         ds = FaceFramesSeqPredictionDataset(os.path.join(test_labels_dir, name),dataset_root,transform=transform_test,seq_len=seq_len)
-    #         print(f"loaded {len(ds)} test examples")
+        for stage in stages:
+            name='test_set'+stage+'.txt'
+            test_labels = []
+            test_names = []
+            test_gt = []
 
-    #         with torch.no_grad():
-    #             for x,nameee in ds:
-    #                 x = x.unsqueeze(0).to(model.device)
-    #                 y = model(x)
-    #                 y = y.cpu().numpy()
-    #                 y =y[0][0]
+            #use seq len
 
-    #                 test_labels.append(y)
-    #                 test_names.append(nameee)
+            ds = FaceFramesSeqPredictionDataset_middle_frames(
+                os.path.join(args.test_labels_dir, "Test"+stage+"-labels.txt"),
+                dataset_root,
+                transform=transform_test,
+                seq_len=seq_len,
+                seed= seed if seed != -1 else None
+            )
+            print(f"loaded {len(ds)} test examples")
 
-    #         print(f"predicted {len(test_labels)} labels for {name}")
-    #         print(f'len test_names {len(test_names)}')
-    #         print(f'len test_labels {len(test_labels)}')
+            with torch.no_grad():
+                for x,gt,nameee in ds:
+                    x = x.unsqueeze(0).to(model.device)
+                    y = model(x)
+                    y = y.cpu().numpy()
+                    y =y[0][0]
+                    test_gt.append(gt)
+                    test_labels.append(y)
+                    test_names.append(nameee)
 
-    #         #save to file with  Test1_preds.txt, Test2_preds.txt, Test3_preds.txt
-    #         #name, label
-    #         with open(os.path.join(resultsdir, 'Test'+stage+'_preds.txt'), 'w') as f:
-    #             for i in range(len(test_names)):
-    #                 f.write(f"{test_names[i]},{test_labels[i]}\n")
+            #compute score for test set
+            test_labels = torch.tensor(test_labels).to(model.device)
+            test_gt = torch.tensor(test_gt).to(model.device)
+            test_names = np.array(test_names)
+            test_labels = test_labels.view(-1)
 
-    #         print(f"saved {len(test_labels)} predictions to {os.path.join(resultsdir, 'Test'+stage+'_preds.txt')}")
+            plcc = model.pearson_corr_coef(test_labels, test_gt)
+            spearman = model.spearman_corr_coef(test_labels, test_gt)
+            mse_log = model.mse_log(test_labels, test_gt)
+            rmse = torch.sqrt(mse_log)
 
-    #     print("done")
+            print(f"test_set{stage}_plcc: {plcc}")
+            print(f"test_set{stage}_spearman: {spearman}")
+            print(f"test_set{stage}_rmse: {rmse}")
 
-    # else:
-    #     print("not rank 0 skipping predictions")
+            #save to wandb
+            wandb.log({f"final_test_set{stage}_plcc": plcc})
+            wandb.log({f"final_test_set{stage}_spearman": spearman})
+            wandb.log({f"final_test_set{stage}_rmse": rmse})
+            wandb.log({f"final_test_set{stage}_score": (plcc + spearman) / 2})
+
+            scores.append((plcc + spearman) / 2)
+
+
+
+            print(f"predicted {len(test_labels)} labels for {name}")
+            print(f'len test_names {len(test_names)}')
+            print(f'len test_labels {len(test_labels)}')
+
+            #save to file with  Test1_preds.txt, Test2_preds.txt, Test3_preds.txt
+            #name, label
+            with open(os.path.join(resultsdir, 'Test'+stage+'_preds.txt'), 'w') as f:
+                for i in range(len(test_names)):
+                    f.write(f"{test_names[i]},{test_labels[i]}\n")
+
+            print(f"saved {len(test_labels)} predictions to {os.path.join(resultsdir, 'Test'+stage+'_preds.txt')}")
+
+        print(f"final_score: {sum(scores)/3}")
+        wandb.log({"final_final_score": sum(scores)/3})
+
+
+        print("done")
+
+    else:
+        print("not rank 0 skipping predictions")
