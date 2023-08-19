@@ -64,7 +64,7 @@ def train_val_split(dataset, train_prop=0.8, val_prop=0.2, seed=None):
 
 
 class ConvNeXt(pl.LightningModule):
-    def __init__(self, og_path, model_name="convnext_tiny", dropout=0.1):
+    def __init__(self, og_path, model_name="convnext_tiny", dropout=0.1, loss="rmse"):
         super(ConvNeXt, self).__init__()
         self.model_name = model_name
         self.backbone = create_model(self.model_name, pretrained=True, num_classes=2)
@@ -87,6 +87,7 @@ class ConvNeXt(pl.LightningModule):
         self.fc3 = nn.Linear(256, 64)
         self.fc4 = nn.Linear(64, 1)
         self.mse = nn.MSELoss()
+        self.mae = nn.L1Loss()
 
         self.test_preds = {}
         self.test_labels = {}
@@ -102,7 +103,44 @@ class ConvNeXt(pl.LightningModule):
         self.seen_samples = set()
         self.seen_sample_names = set()
 
+        self.loss_fn = None
+
+        if loss == "rmse":
+            self.loss_fn = self.RMSE
+        elif loss == "mae":
+            self.loss_fn = self.MAE
+
+        elif loss == "opdai":
+
+            def custom_loss(pred, target):
+                return self.norm_loss_with_normalization(
+                    pred, target, p=1, q=2
+                ) + self.kl_div_loss(pred, target)
+
+            self.loss_fn = custom_loss
+
+        elif loss == "hust":
+
+            def custom_loss(pred, target):
+                # combine mae with rank and pearson
+                alpha = 0.5
+                beta = 1
+                # L = LMAE + α · LP LCC + β · Lrank (
+                return (
+                    self.MAE(pred, target)
+                    + alpha * self.pearson_corr_coef_loss(pred, target)
+                    # + beta * self.pairwise_ranking_loss(pred, target) #TODO
+                )
+
+            self.loss_fn = custom_loss
+        else:
+            raise ValueError("Invalid loss function")
+
+
         self.save_hyperparameters()
+
+
+        
 
     def RMSE(self, preds, y):
         mse = self.mse(preds.view(-1), y.view(-1))
@@ -131,20 +169,39 @@ class ConvNeXt(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         preds = self(x)
-        loss = self.RMSE(preds, y)
+        loss = self.loss_fn(preds, y)
+        rmse_loss = self.RMSE(preds, y)
         self.log(
             "train_loss", loss.item(), on_epoch=True, prog_bar=True, sync_dist=True
         )
+        self.log(
+            "train_rmse_loss",
+            rmse_loss.item(),
+            on_epoch=True,
+            prog_bar=True,
+            sync_dist=True,
+        )
+
+
 
         return loss
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
         preds = self(x)
-        loss = self.RMSE(preds, y)
+        loss = self.loss_fn(preds, y)
+        rmse_loss = self.RMSE(preds, y)
         loss_value = loss.item()
 
         self.log("val_loss", loss.item(), on_epoch=True, prog_bar=True, sync_dist=True)
+        self.log(
+            "val_rmse_loss",
+            rmse_loss.item(),
+            on_epoch=True,
+            prog_bar=True,
+            sync_dist=True,
+        )
+
         #if loss is nan.0 then stop training
         if math.isnan(loss_value):
             print("val_loss is nan.0 stopping training")
@@ -153,8 +210,54 @@ class ConvNeXt(pl.LightningModule):
             print("val_loss is inf stopping training")
             self.trainer.should_stop = True
 
-    
+    def pearson_corr_coef_mine(self, preds, y, eps=1e-8):
+        preds_mean = preds.mean()
+        y_mean = y.mean()
+        cov = ((preds - preds_mean) * (y - y_mean)).mean()
+        preds_std = torch.sqrt((preds - preds_mean).pow(2).mean() + eps)
+        y_std = torch.sqrt((y - y_mean).pow(2).mean() + eps)
+        plcc = cov / (preds_std * y_std)
+        return plcc
+
+    def pearson_corr_coef_loss(self, preds, y):
+        plcc = self.pearson_corr_coef_mine(preds.view(-1), y.view(-1))
+        loss = 1 - torch.abs(plcc)
+        return loss
        
+
+    def kl_div_loss(self, preds, target, eps=1e-8):
+        preds_softmax = torch.nn.functional.softmax(preds, dim=-1)
+        target_softmax = torch.nn.functional.softmax(target, dim=-1)
+        loss = torch.sum(
+            target_softmax * torch.log((target_softmax + eps) / (preds_softmax + eps)), dim=-1
+        )
+        loss = torch.mean(loss)
+        return loss
+
+
+    def norm_loss_with_normalization(self, pred, target, p=1, q=2):
+        """
+        Args:
+            pred (Tensor): of shape (N, 1). Predicted tensor.
+            target (Tensor): of shape (N, 1). Ground truth tensor.
+        """
+        batch_size = pred.shape[0]
+        if batch_size > 1:
+            vx = pred - pred.mean()
+            vy = target - target.mean()
+            if torch.all(vx == 0) or torch.all(vy == 0):
+                return torch.nn.functional.l1_loss(pred, target)
+
+            scale = np.power(2, p) * np.power(batch_size, max(0, 1 - p / q))  # p, q>0
+            norm_pred = torch.nn.functional.normalize(vx, p=q, dim=0)
+            norm_target = torch.nn.functional.normalize(vy, p=q, dim=0)
+            loss = torch.norm(norm_pred - norm_target, p=p) / scale
+        else:
+            loss = torch.nn.functional.l1_loss(pred, target)
+        return loss.mean()
+
+    def MAE(self, preds, y):
+        return self.mae(preds.view(-1), y.view(-1))
 
 
     def configure_optimizers(self):
@@ -290,6 +393,12 @@ if __name__ == "__main__":
     # max_epochs
     parser.add_argument("--max_epochs", type=int, default=33, help="Max epochs.")
 
+    parser.add_argument(
+        "--loss",
+        default="rmse",
+        help="Loss function to use. Supported values: mse, rmse, mae, norm_loss_with_normalization, opdai, hust",
+    )
+
     # parser.add_argument('--test_labels_dir', default='/d/hpc/projects/FRI/ldragar/label/', help='Path to the test labels directory.')
 
     args = parser.parse_args()
@@ -325,7 +434,7 @@ if __name__ == "__main__":
     print("loading dataset")
 
     face_frames_dataset = RandomSeqFaceFramesDataset(
-        dataset_root, labels_file, transform=transform_train, seq_len=seq_len
+        dataset_root, labels_file, transform=transform_train, seq_len=seq_len,seed=seed
     )
 
     face_frames_dataset_test1 = FaceFramesSeqPredictionDatasetFinal(
@@ -333,18 +442,21 @@ if __name__ == "__main__":
         dataset_root,
         transform=transform_test,
         seq_len=seq_len,
+        seed=seed
     )
     face_frames_dataset_test2 = FaceFramesSeqPredictionDatasetFinal(
         os.path.join(args.test_labels_dir, "Test2-labels.txt"),
         dataset_root,
         transform=transform_test,
         seq_len=seq_len,
+        seed=seed
     )
     face_frames_dataset_test3 = FaceFramesSeqPredictionDatasetFinal(
         os.path.join(args.test_labels_dir, "Test3-labels.txt"),
         dataset_root,
         transform=transform_test,
         seq_len=seq_len,
+        seed=seed
     )
 
     print("splitting dataset")
@@ -442,7 +554,7 @@ if __name__ == "__main__":
 
     # convnext_xlarge_384_in22ft1k
     model = ConvNeXt(
-        og_path, model_name="convnext_xlarge_384_in22ft1k", dropout=args.dropout
+        og_path, model_name="convnext_xlarge_384_in22ft1k", dropout=args.dropout, loss=args.loss
     )
 
     wandb_logger.watch(model, log="all", log_freq=100)

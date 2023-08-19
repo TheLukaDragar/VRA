@@ -625,7 +625,7 @@ if __name__ == "__main__":
     # Test the model
     print("testing current model")
 
-    model.current_test_set = "se"
+    model.current_test_set = "test_set1"
     trainer.test(model, test_dl1)
     model.current_test_set = "test_set2"
     trainer.test(model, test_dl2)
