@@ -1,0 +1,7 @@
+cp_id,ry8euh4d
+seed,7327
+args,Namespace(dataset_root='/d/hpc/projects/FRI/ldragar/dataset', labels_dir='./label/', model_dir='./eva_models/', batch_size=2, seq_len=2, seed=7327, cp_id='ry8euh4d', x_predictions=10, out_predictions_dir='./predictions/', test_labels_dir='/d/hpc/projects/FRI/ldragar/code/competition_end_groundtruth/')
+test_set1_score,{'pearson_corr_coef': 0.7988372282234543, 'spearman_corr_coef': 0.7613032666603495, 'rmse': 0.44740507}
+test_set2_score,{'pearson_corr_coef': 0.9215837124584738, 'spearman_corr_coef': 0.9009931933501276, 'rmse': 0.35035944}
+test_set3_score,{'pearson_corr_coef': 0.8763108555025769, 'spearman_corr_coef': 0.8252769537628779, 'rmse': 0.4120997}
+final_score,0.8473842016596435

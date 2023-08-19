@@ -411,6 +411,68 @@ class RandomSeqFaceFramesDataset(Dataset):
     def __len__(self):
         return len(self.video_dirs)
 
+class MulRandomSeqFaceFramesDataset(Dataset):
+    def __init__(self, dataset_root, labels_file, transform=None, seq_len=5,seed=None,num_slices=1):
+        self.dataset_root = dataset_root
+        self.transform = transform
+        self.seq_len = seq_len
+        self.num_slices = num_slices
+
+        if seed is not None:
+            random.seed(seed)
+
+        # Read the dataset labels file
+        self.video_dirs, self.mos_labels = [], []
+        with open(labels_file, 'r') as csvfile:
+            reader = csv.reader(csvfile)
+            next(reader)
+            for row in reader:
+                video_dir, mos_label = row
+
+                self.video_dirs += [os.path.join(dataset_root, video_dir)] * self.num_slices
+                self.mos_labels += [float(mos_label)] * self.num_slices
+
+    def __getitem__(self, index):
+        video_dir = self.video_dirs[index]
+        mos_label = self.mos_labels[index]
+
+        frame_names = sorted(os.listdir(video_dir))
+        frame_count = len(frame_names)
+
+        if frame_count == 0:
+            print(video_dir)
+
+        # Choose a random starting frame and get the sequence of frames
+        start_frame = random.randint(0, max(0, frame_count - self.seq_len))
+        frame_sequence = frame_names[start_frame : start_frame + self.seq_len]
+
+        # Logging the chosen start frame and sequence
+        # print(f"Video directory: {video_dir}")
+        # print(f"Chosen start frame: {start_frame}")
+        # print(f"Chosen frame sequence: {frame_sequence}")
+
+
+        # Read and transform the frames
+        frames = []
+        for frame_name in frame_sequence:
+            frame_path = os.path.join(video_dir, frame_name)
+            frame = cv2.cvtColor(cv2.imread(frame_path, cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
+            if self.transform:
+                frame = self.transform(image=frame)["image"]
+            frames.append(frame)
+
+        # Pad the sequence if it has fewer frames than seq_len
+        while len(frames) < self.seq_len:
+            frames.append(torch.zeros_like(frames[-1]))
+
+        sequence = torch.stack(frames)
+        mos_label = torch.tensor(mos_label, dtype=torch.float32)
+
+        return sequence, mos_label
+
+    def __len__(self):
+        return len(self.video_dirs)
+
 class FaceFramesSeqPredictionDataset(Dataset):
     """
     Dataset for predicting MOS scores from a video directory.
@@ -471,13 +533,17 @@ class FaceFramesSeqPredictionDatasetFinal(Dataset):
     It will return a list of frames from the video directory and the mos score.
     """
 
-    def __init__(self, labels, dataset_root, transform=None, seq_len=5):
+    def __init__(self, labels, dataset_root, transform=None, seq_len=5,seed=None):
         self.video_list_file = labels
         self.dataset_root = dataset_root
         self.transform = transform
         self.seq_len = seq_len
         self.names = []
         self.mos_labels = []
+
+        if seed is not None:
+            random.seed(seed)
+            
 
         lines = []
 
@@ -510,7 +576,7 @@ class FaceFramesSeqPredictionDatasetFinal(Dataset):
         print(f"Video directory: {video_dir}")
         print(f"Chosen start frame: {start_frame}")
         print(f"Chosen frame sequence: {frame_sequence}")
-        
+
 
         # Read and transform the frames
         frames = []

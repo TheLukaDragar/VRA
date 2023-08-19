@@ -1,0 +1,96 @@
+project: luka_vra
+name: vega_eva1
+program: train_eva6.py
+
+command:
+  - ${env}
+  # - echo
+  - python3
+  - ${program}
+  - "--devices"
+  - "0"
+  - "1"
+  - "2"
+  - "3"
+  - "--dataset_root"
+  - "/ceph/hpc/data/st2207-pgp-users/ldragar/dataset/"
+  - ${args}
+
+
+
+method: random
+metric:
+  goal: minimize
+  name: val_loss
+
+parameters:
+  # model_name:
+  #   values:
+  #     - convnext_xlarge_384_in22ft1k
+  #   distribution: categorical
+  batch_size:
+    values:
+      - 1
+      - 2
+      - 4
+    distribution: categorical
+    
+    
+  seq_len:
+    values:
+      - 4
+      - 8
+
+    distribution: categorical
+
+  accumulate_grad_batches:
+    values:
+      - 1
+      - 4
+      - 8
+    distribution: categorical
+
+  dropout:
+    distribution: categorical
+    values:
+      - 0.1
+      - 0.5
+      - 0.7
+
+  max_epochs:
+    values:
+      - 16
+      - 32
+    distribution: categorical
+
+  num_slices:
+    values:
+      - 1
+      - 2
+      - 4
+    distribution: categorical
+
+  
+
+   
+
+  # og_checkpoint:
+  #   value:
+  #     - "./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth"
+  #   distribution: constant
+
+  seed:
+    values:
+      - 26
+
+
+
+  # devices:
+  #   value:
+  #     - [0,1,2,3]
+  #   distribution: constant
+
+  # dataset_root:
+  #   value:
+  #     - "/ceph/hpc/data/st2207-pgp-users/ldragar/dataset/"
+  #   distribution: constant

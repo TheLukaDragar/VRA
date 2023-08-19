@@ -1,6 +1,6 @@
 project: luka_vra
-name: eva_Sweep 
-program: train_eva4.py
+name: convn_sweep 
+program: train_convnext4.py
 
 command:
   - ${env}
