@@ -528,7 +528,7 @@ if __name__ == "__main__":
 
                     # Perform prediction on each frame in the video
                     for frame in sequences:
-                        frame = frame.unsqueeze(0).to(device)
+                        frame = frame.unsqueeze(0).to(model.device)
                         y = model(frame)
                         y = y.cpu().numpy()
                         y = y[0][0]
