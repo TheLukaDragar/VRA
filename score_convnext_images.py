@@ -323,7 +323,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--dataset_root",
-        default="/d/hpc/projects/FRI/ldragar/dataset",
+        default="../dataset",
         help="Path to the dataset",
     )
     parser.add_argument(
@@ -359,7 +359,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--test_labels_dir",
-        default="/d/hpc/projects/FRI/ldragar/code/competition_end_groundtruth/",
+        default="./competition_end_groundtruth/",
         help="Path to the test labels directory.",
     )
     parser.add_argument(
