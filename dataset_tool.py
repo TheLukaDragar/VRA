@@ -736,6 +736,58 @@ class VideoFramesDataset_2(Dataset):
 
     def __len__(self):
         return len(self.video_files)
+
+
+class FaceFramesSeqPredictionDataset_all_frames(Dataset):
+    """
+    Dataset for predicting MOS scores from a video directory.
+    It will return a list of frames from the video directory and the MOS score.
+    """
+
+    def __init__(self, labels, dataset_root, transform=None):
+        self.video_list_file = labels
+        self.dataset_root = dataset_root
+        self.transform = transform
+        self.names = []
+        self.mos_labels = []
+
+        lines = []
+
+        with open(self.video_list_file, 'r') as f:
+            lines = [line.strip() for line in f]
+
+        for line in lines:
+            line = line.split(',')
+            self.names.append(line[0])
+            self.mos_labels.append(float(line[1]))
+
+        # Read the list of video directories from the provided file
+        self.video_dirs = [os.path.join(self.dataset_root, line) for line in self.names]
+
+    def __getitem__(self, index):
+        video_dir = self.video_dirs[index]
+        name = self.names[index]
+        mos_label = self.mos_labels[index]
+
+        frame_names = sorted(os.listdir(video_dir))
+
+        # Read and transform the frames
+        frames = []
+        for frame_name in frame_names:
+            frame_path = os.path.join(video_dir, frame_name)
+            frame = cv2.cvtColor(cv2.imread(frame_path, cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
+            if self.transform:
+                frame = self.transform(image=frame)["image"]
+            frames.append(frame)
+
+        sequence = torch.stack(frames)
+        mos_label = torch.tensor(mos_label, dtype=torch.float32)
+
+        return sequence, mos_label, name
+
+    def __len__(self):
+        return len(self.video_dirs)
+
     
 
 class VideoFramesDataset_3_face(Dataset):
