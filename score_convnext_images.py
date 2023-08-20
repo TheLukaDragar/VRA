@@ -523,7 +523,7 @@ if __name__ == "__main__":
             #         test_gt.append(gt)
 
             with torch.no_grad():
-                for sequences, gt, name in dataset:
+                for sequences, gt, name in ds:
                     predictions = []
 
                     # Perform prediction on each frame in the video
