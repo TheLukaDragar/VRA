@@ -399,7 +399,7 @@ if __name__ == "__main__":
     
 
     model = ConvNeXt(
-        og_path, model_name="convnext_xlarge_384_in22ft1k", loss=args.loss
+        og_path, model_name="convnext_xlarge_384_in22ft1k", dropout=0.1, loss="rmse"
     )
     # load checkpoint
     # get files in dir
