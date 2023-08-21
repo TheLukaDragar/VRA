@@ -353,7 +353,7 @@ if __name__ == "__main__":
     # parser.add_argument('--cp_save_dir', default='/d/hpc/projects/FRI/ldragar/checkpoints/', help='Path to save checkpoints.')
     parser.add_argument(
         "--final_model_save_dir",
-        default="./convnext_models/",
+        default="./convnext_models_images/",
         help="Path to save the final model.",
     )
     parser.add_argument("--batch_size", type=int, default=2, help="Batch size.")
