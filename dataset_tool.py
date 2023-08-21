@@ -17,7 +17,7 @@ from PIL import Image
 
 
 def build_transforms(height, width, max_pixel_value=255.0, norm_mean=[0.485, 0.456, 0.406],
-                     norm_std=[0.229, 0.224, 0.225], **kwargs):
+                     norm_std=[0.229, 0.224, 0.225],augment=False, **kwargs):
     """Builds train and test transform functions.
 
     Args:
@@ -34,7 +34,10 @@ def build_transforms(height, width, max_pixel_value=255.0, norm_mean=[0.485, 0.4
         norm_std = [0.229, 0.224, 0.225] # imagenet std
     normalize = transforms.Normalize(mean=norm_mean, std=norm_std)
 
-    train_transform = A.Compose([
+    train_transform = None
+
+    if not augment:
+        train_transform = A.Compose([
         # A.HorizontalFlip(),
         # A.GaussNoise(p=0.1),
         # A.GaussianBlur(p=0.1),
@@ -43,6 +46,21 @@ def build_transforms(height, width, max_pixel_value=255.0, norm_mean=[0.485, 0.4
         #THIS IS OK 
         ToTensorV2(),
     ])
+    else:
+         train_transform = A.Compose([
+         A.HorizontalFlip(),
+         A.CoarseDropout(max_holes=2, max_height=40, max_width=40, p=0.1), #random erasing
+         A.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1, p=0.3), # Random color adjustment
+         A.RandomContrast(limit=0.2, p=0.2), # Random contrast adjustment
+        # A.GaussNoise(p=0.1),
+        # A.GaussianBlur(p=0.1),
+        A.Resize(height, width),
+        A.Normalize(mean=norm_mean, std=norm_std, max_pixel_value=max_pixel_value),
+        #THIS IS OK 
+        ToTensorV2(),
+    ])
+
+
 
     test_transform = A.Compose([
         A.Resize(height, width),

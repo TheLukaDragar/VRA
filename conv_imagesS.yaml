@@ -2,12 +2,18 @@ project: luka_vra
 name: vega_convnext_images
 program: train_convnext_images.py
 
+
 command:
   - ${env}
   # - echo
   - python3
   - ${program}
   - ${args}
+  - "--devices"
+  - "0"
+  - "1"
+  - "2"
+  - "3"
 
 
 
@@ -15,7 +21,6 @@ method: random
 metric:
   goal: minimize
   name: val_loss
-
 
 parameters:
   # model_name:
@@ -33,7 +38,6 @@ parameters:
     values:
       - 4
       - 10
-      - 20
 
     distribution: categorical
 
@@ -60,24 +64,26 @@ parameters:
       - "mae"
     distribution: categorical
 
-  lr:
-    distribution: categorical
+  augmentation:
     values:
-
-      - 0.0001
-      - 0.00002
-      - 0.00001
-
-
-  og_checkpoint:
-    values:
-      - "./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth"
-      - "./borut_models/convnext_xlarge_384_in22ft1k_30.pth"
+      - True
+      - False
     distribution: categorical
+
+
+  
+
+   
+
+  # og_checkpoint:
+  #   value:
+  #     - "./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth"
+  #   distribution: constant
 
   seed:
     values:
       - 69
+      - 26
       - -1
 
 
