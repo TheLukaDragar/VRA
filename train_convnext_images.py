@@ -104,6 +104,7 @@ class ConvNeXt(pl.LightningModule):
         self.seen_sample_names = set()
 
         self.loss_fn = None
+        self.lr = lr
 
         if loss == "rmse":
             self.loss_fn = self.RMSE
