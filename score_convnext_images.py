@@ -524,6 +524,9 @@ if __name__ == "__main__":
 
             with torch.no_grad():
                 for sequences, gt, name in ds:
+                    print(f"predicting {name}")
+                    pint("sequences", sequences.shape)
+                    
                     predictions = []
 
                     # Perform prediction on each frame in the video

@@ -770,6 +770,7 @@ class FaceFramesSeqPredictionDataset_all_frames(Dataset):
         mos_label = self.mos_labels[index]
 
         frame_names = sorted(os.listdir(video_dir))
+        
 
         # Read and transform the frames
         frames = []
