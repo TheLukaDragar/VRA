@@ -1,0 +1,7 @@
+cp_id,qj0iryy1
+seed,-1
+args,Namespace(dataset_root='../dataset', labels_dir='./label/', model_dir='./convnext_models/', batch_size=2, seq_len=5, seed=-1, cp_id='qj0iryy1', x_predictions=1, out_predictions_dir='./predictions/', test_labels_dir='./competition_end_groundtruth/', og_checkpoint='./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth')
+test_set1_score,{'pearson_corr_coef': 0.8005743696024364, 'spearman_corr_coef': 0.7691012957523361, 'rmse': 0.4729361}
+test_set2_score,{'pearson_corr_coef': 0.9339987100120504, 'spearman_corr_coef': 0.9232224656744704, 'rmse': 0.3295173}
+test_set3_score,{'pearson_corr_coef': 0.8942202939663829, 'spearman_corr_coef': 0.8740640482522146, 'rmse': 0.37167537}
+final_score,0.8658635305433151
