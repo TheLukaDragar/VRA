@@ -79,10 +79,10 @@ class Eva(pl.LightningModule):
 
         self.drop = nn.Dropout(dropout)
         # self.fc = nn.Linear(self.backbone.num_features, 1)
-        print("model created with head feats of ", n_features + n_features)
+        print("model created with head feats of ", n_features)
 
         # average and std feature vector
-        self.fc = nn.Linear(n_features + n_features, 512)
+        self.fc = nn.Linear(n_features, 512)
         self.fc2 = nn.Linear(512, 256)
         self.fc3 = nn.Linear(256, 64)
         self.fc4 = nn.Linear(64, 1)
@@ -186,23 +186,17 @@ class Eva(pl.LightningModule):
         return loss.mean()
 
     def forward(self, x):
-        batch_size, sequence_length, channels, height, width = x.shape
-        x = x.view(batch_size * sequence_length, channels, height, width)
+        # Choose a random index from the sequence dimension
+        random_idx = torch.randint(0, x.shape[1], (x.shape[0],))
 
-        features = self.backbone(
-            x
-        )  # Output shape: (batch_size * sequence_length, n_features)
+        # Select a random frame for each item in the batch
+        x_random_frame = x[torch.arange(x.shape[0]), random_idx]
 
-        # Reshape to (batch_size, sequence_length, n_features)
-        features = features.view(batch_size, sequence_length, -1)
+        # Process the selected frame with the backbone
+        features = self.backbone(x_random_frame)  # Output shape: (batch_size, n_features)
 
-        # Compute mean and standard deviation along the sequence dimension
-        mean_features = torch.mean(features, dim=1)
-        std_features = torch.std(features, dim=1)
-
-        # Concatenate mean and standard deviation feature vectors
-        concat_features = torch.cat((mean_features, std_features), dim=1)
-        x = self.drop(concat_features)
+        # Optionally, you can continue with further processing as needed
+        x = self.drop(features)
         x = torch.nn.functional.relu(self.fc(x))
         x = torch.nn.functional.relu(self.fc2(x))
         x = torch.nn.functional.relu(self.fc3(x))
@@ -395,7 +389,6 @@ if __name__ == "__main__":
     print("starting")
     dataset_root = args.dataset_root
     labels_file = args.labels_file
-    og_path = args.og_checkpoint
     final_model_save_dir = args.final_model_save_dir
     batch_size = args.batch_size
     seq_len = args.seq_len
