@@ -64,7 +64,7 @@ def train_val_split(dataset, train_prop=0.8, val_prop=0.2, seed=None):
 
 
 class ConvNeXt(pl.LightningModule):
-    def __init__(self, og_path, model_name="convnext_tiny", dropout=0.1, loss="rmse"):
+    def __init__(self, og_path, model_name="convnext_tiny", dropout=0.1, loss="rmse", lr=2e-5):
         super(ConvNeXt, self).__init__()
         self.model_name = model_name
         self.backbone = create_model(self.model_name, pretrained=True, num_classes=2)
@@ -261,7 +261,7 @@ class ConvNeXt(pl.LightningModule):
 
 
     def configure_optimizers(self):
-        optimizer = AdamW(self.parameters(), lr=2e-5)
+        optimizer = AdamW(self.parameters(), lr=self.lr)
         lr_scheduler = {
             "scheduler": ReduceLROnPlateau(
                 optimizer, mode="min", factor=0.1, patience=2, verbose=True
@@ -398,6 +398,8 @@ if __name__ == "__main__":
         default="rmse",
         help="Loss function to use. Supported values: mse, rmse, mae, norm_loss_with_normalization, opdai, hust",
     )
+    #lr
+    parser.add_argument("--lr", type=float, default=2e-5, help="Learning rate.")
 
     # parser.add_argument('--test_labels_dir', default='/d/hpc/projects/FRI/ldragar/label/', help='Path to the test labels directory.')
 
@@ -554,7 +556,7 @@ if __name__ == "__main__":
 
     # convnext_xlarge_384_in22ft1k
     model = ConvNeXt(
-        og_path, model_name="convnext_xlarge_384_in22ft1k", dropout=args.dropout, loss=args.loss
+        og_path, model_name="convnext_xlarge_384_in22ft1k", dropout=args.dropout, loss=args.loss,lr=args.lr
     )
 
     wandb_logger.watch(model, log="all", log_freq=100)

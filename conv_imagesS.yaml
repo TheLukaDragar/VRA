@@ -1,5 +1,5 @@
 project: luka_vra
-name: vega_eva1
+name: vega_convnext_images
 program: train_convnext_images.py
 
 command:
@@ -59,6 +59,15 @@ parameters:
       - "rmse"
       - "mae"
     distribution: categorical
+
+  lr:
+    distribution: categorical
+    values:
+    
+      - 0.0001
+      - 0.00002
+      - 0.00001
+
 
 
   
