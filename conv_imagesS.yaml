@@ -63,7 +63,7 @@ parameters:
   lr:
     distribution: categorical
     values:
-    
+
       - 0.0001
       - 0.00002
       - 0.00001
@@ -75,7 +75,7 @@ parameters:
    
 
   og_checkpoint:
-    value:
+    values:
       - "./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth"
       - "./borut_models/convnext_xlarge_384_in22ft1k_30.pth"
     distribution: constant
