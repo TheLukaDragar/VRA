@@ -402,6 +402,13 @@ if __name__ == "__main__":
     #lr
     parser.add_argument("--lr", type=float, default=2e-5, help="Learning rate.")
 
+    parser.add_argument(
+        "--augmentation",
+        type=bool,
+        default=False,
+        help="Whether to use data augmentation.",
+    )
+
     # parser.add_argument('--test_labels_dir', default='/d/hpc/projects/FRI/ldragar/label/', help='Path to the test labels directory.')
 
     args = parser.parse_args()
@@ -432,6 +439,7 @@ if __name__ == "__main__":
         max_pixel_value=255.0,
         norm_mean=[0.485, 0.456, 0.406],
         norm_std=[0.229, 0.224, 0.225],
+        augment=args.augmentation,
     )
 
     print("loading dataset")
@@ -571,6 +579,9 @@ if __name__ == "__main__":
     wandb_logger.log_hyperparams({"accumulate_grad_batches": accumulate_grad_batches})
     # devices
     wandb_logger.log_hyperparams({"devices": args.devices})
+
+    wandb_logger.log_hyperparams({"augment": args.augmentation})
+
 
     wandb_run_id = str(wandb_logger.version)
     if wandb_run_id == "None":

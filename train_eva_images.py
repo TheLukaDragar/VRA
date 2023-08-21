@@ -568,7 +568,7 @@ if __name__ == "__main__":
     wandb_logger.log_hyperparams({"devices": args.devices})
 
     #augment
-    wandb_logger.log_hyperparams({"augment": args.augment})
+    wandb_logger.log_hyperparams({"augment": args.augmentation})
 
 
     wandb_run_id = str(wandb_logger.version)
