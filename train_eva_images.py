@@ -319,7 +319,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--dataset_root",
-        default="/d/hpc/projects/FRI/ldragar/dataset",
+        default="../dataset",
         help="Path to the dataset",
     )
     parser.add_argument(

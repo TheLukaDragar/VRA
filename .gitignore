@@ -6,3 +6,4 @@ eva_models
 wandb/latest-run
 wandb/*
 results/*
+wandb/latest-run
