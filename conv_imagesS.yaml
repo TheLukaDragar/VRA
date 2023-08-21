@@ -16,6 +16,7 @@ metric:
   goal: minimize
   name: val_loss
 
+
 parameters:
   # model_name:
   #   values:
@@ -25,7 +26,6 @@ parameters:
     values:
       - 1
       - 2
-      - 8
     distribution: categorical
     
     
@@ -33,21 +33,20 @@ parameters:
     values:
       - 4
       - 10
+      - 20
 
     distribution: categorical
 
   accumulate_grad_batches:
     values:
       - 1
-      - 4
-      - 8
+      - 2
     distribution: categorical
 
   dropout:
     distribution: categorical
     values:
       - 0.1
-      - 0.5
 
   max_epochs:
     values:
@@ -66,10 +65,11 @@ parameters:
 
    
 
-  # og_checkpoint:
-  #   value:
-  #     - "./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth"
-  #   distribution: constant
+  og_checkpoint:
+    value:
+      - "./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth"
+      - "./borut_models/convnext_xlarge_384_in22ft1k_30.pth"
+    distribution: constant
 
   seed:
     values:

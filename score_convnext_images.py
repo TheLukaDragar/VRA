@@ -579,6 +579,23 @@ if __name__ == "__main__":
             for i in range(len(all_test_names[0])):
                 f.write(f"{all_test_names[0][i]},{mean_test_labels[i]}\n")
 
+        #save std beetwen frames
+        with open(os.path.join(resultsdir, "std_beetwen_frames+Test" + stage + "_preds.txt"), "w") as f:
+            for i in range(len(std_beetwen_frames)):
+                f.write(f"{std_beetwen_frames[i]}\n")
+
+       #save all predictions for each frame
+        with open(os.path.join(resultsdir, "frame_predictions+Test" + stage + "_preds.txt"), "w") as f:
+            for i in range(len(all_test_labels)):
+                line = ""
+                for j in range(len(all_test_labels[i])):
+                    line += str(all_test_labels[i][j]) + ","
+
+                f.write(f"{line}\n")
+
+        
+
+
         if stage == "1":
             t1 = mean_test_labels
             gt1 = mean_test_gt

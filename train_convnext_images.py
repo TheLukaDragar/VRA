@@ -330,7 +330,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--dataset_root",
-        default="/d/hpc/projects/FRI/ldragar/dataset",
+        default="../dataset",
         help="Path to the dataset",
     )
     parser.add_argument(
@@ -441,21 +441,21 @@ if __name__ == "__main__":
         os.path.join(args.test_labels_dir, "Test1-labels.txt"),
         dataset_root,
         transform=transform_test,
-        seq_len=seq_len,
+        seq_len=1,
         seed = seed if seed != -1 else None
     )
     face_frames_dataset_test2 = FaceFramesSeqPredictionDataset_middle_frames(
         os.path.join(args.test_labels_dir, "Test2-labels.txt"),
         dataset_root,
         transform=transform_test,
-        seq_len=seq_len,
+        seq_len=1,
         seed= seed if seed != -1 else None
     )
     face_frames_dataset_test3 = FaceFramesSeqPredictionDataset_middle_frames(
         os.path.join(args.test_labels_dir, "Test3-labels.txt"),
         dataset_root,
         transform=transform_test,
-        seq_len=seq_len,
+        seq_len=1,
        seed= seed if seed != -1 else None
     )
 
@@ -660,7 +660,7 @@ if __name__ == "__main__":
                 os.path.join(args.test_labels_dir, "Test"+stage+"-labels.txt"),
                 dataset_root,
                 transform=transform_test,
-                seq_len=seq_len,
+                seq_len=1,
                 seed= seed if seed != -1 else None
             )
             print(f"loaded {len(ds)} test examples")

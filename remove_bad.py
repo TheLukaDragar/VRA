@@ -2,7 +2,7 @@ import wandb
 import os
 # Set the project and sweep information
 project_name = "luka_vra"
-sweep_id = "fa6r9hym"
+sweep_id = "kos8lfqk"
 
 # Authenticate to wandb
 wandb.login()
