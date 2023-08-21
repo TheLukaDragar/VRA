@@ -525,13 +525,13 @@ if __name__ == "__main__":
             with torch.no_grad():
                 for sequences, gt, name in ds:
                     print(f"predicting {name}")
-                    pint("sequences", sequences.shape)
+                    print("sequences", sequences.shape)
                     
                     predictions = []
 
                     # Perform prediction on each frame in the video
                     for frame in sequences:
-                        frame = frame.unsqueeze(0).to(model.device)
+                        frame = frame.unsqueeze(0).unsqueeze(0).to(model.device)
                         y = model(frame)
                         y = y.cpu().numpy()
                         y = y[0][0]
