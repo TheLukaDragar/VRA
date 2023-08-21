@@ -69,16 +69,11 @@ parameters:
       - 0.00001
 
 
-
-  
-
-   
-
   og_checkpoint:
     values:
       - "./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth"
       - "./borut_models/convnext_xlarge_384_in22ft1k_30.pth"
-    distribution: constant
+    distribution: categorical
 
   seed:
     values:
