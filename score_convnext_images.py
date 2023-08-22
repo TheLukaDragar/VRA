@@ -545,7 +545,7 @@ if __name__ == "__main__":
 
                 #use tqdm
 
-                with open(os.path.join(resultsdir, "frame_predictions_Test" + stage + "_preds.txt")) as f:
+                with open(os.path.join(resultsdir, "frame_predictions_Test" + stage + "_preds.txt"),'w') as f:
                 
                     
                     for sequences, gt, name in tqdm(dl, desc="Predicting test " + stage):
