@@ -19,8 +19,8 @@ conda activate  /ceph/hpc/data/st2207-pgp-users/ldragar/pytorch_env
 
 
 out_predictions_dir='./predictions/'
-cp_id='vgmu4sbz' 
+cp_id='47qukgop' 
 
 
 #script is made to run on 1 node with 1 gpu
-srun --nodes=1 --exclusive --gpus=1 --ntasks-per-node=1 --time=0-3:00:00 -p gpu python score_eva_convnext.py --out_predictions_dir $out_predictions_dir --cp_id $cp_id
+srun --nodes=1 --exclusive --gpus=1 --ntasks-per-node=1 --time=0-3:00:00 -p gpu python score_convnext_images.py --out_predictions_dir $out_predictions_dir --cp_id $cp_id
