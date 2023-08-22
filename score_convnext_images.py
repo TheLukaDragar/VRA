@@ -605,7 +605,7 @@ if __name__ == "__main__":
 
 
                     all_test_labels.append(mean_prediction)
-                    all_test_names.append(name.item())
+                    all_test_names.append(name[0])
                     all_test_gt.append(gt)
                     all_test_std.append(std_prediction)
                     min_test_frames_scores.append(min(predictions))
