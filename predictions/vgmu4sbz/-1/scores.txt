@@ -1,0 +1,7 @@
+cp_id,vgmu4sbz
+seed,-1
+args,Namespace(dataset_root='../dataset', labels_dir='./label/', model_dir='./eva_models_images/', batch_size=2, seq_len=5, seed=-1, cp_id='vgmu4sbz', x_predictions=1, out_predictions_dir='./predictions/', test_labels_dir='./competition_end_groundtruth/', max_frames=250)
+test_set1_score,{'pearson_corr_coef': 0.7914348449737316, 'spearman_corr_coef': 0.7416953294708365, 'rmse': 0.4661899904966506}
+test_set2_score,{'pearson_corr_coef': 0.9273479452451048, 'spearman_corr_coef': 0.915953198375595, 'rmse': 0.3292409852359267}
+test_set3_score,{'pearson_corr_coef': 0.8572065965289922, 'spearman_corr_coef': 0.8071190756738, 'rmse': 0.4216892636845965}
+final_score,0.8401261650446766
