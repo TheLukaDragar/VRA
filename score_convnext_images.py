@@ -629,7 +629,7 @@ if __name__ == "__main__":
         #     print("all_test_gt has different values in different positions")
 
         print(f"all_test_gt: {all_test_gt}")
-        mean_test_gt = np.array(all_test_gt)
+        mean_test_gt = all_test_gt
 
         # Calculate the RMSE between each pair of predictions
         # rmse_list = []
