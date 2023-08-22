@@ -23,4 +23,4 @@ cp_id='vgmu4sbz'
 
 
 #script is made to run on 1 node with 1 gpu
-srun --nodes=1 --exclusive --gpus=1 --ntasks-per-node=1 --time=0-3:00:00 -p gpu python score_eva.py --out_predictions_dir $out_predictions_dir --cp_id $cp_id
+srun --nodes=1 --exclusive --gpus=1 --ntasks-per-node=1 --time=0-3:00:00 -p gpu python score_eva_images.py --out_predictions_dir $out_predictions_dir --cp_id $cp_id
