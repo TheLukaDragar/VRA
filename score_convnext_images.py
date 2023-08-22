@@ -371,6 +371,12 @@ if __name__ == "__main__":
         help="DFGC1st convnext_xlarge_384_in22ft1k_30.pth file path",
     )
     # stage array
+    parser.add_argument(
+        "--max_frames",
+        type=int,
+        default=300,
+        help="max frames to use for each video",
+    )
 
     args = parser.parse_args()
 
@@ -511,7 +517,7 @@ if __name__ == "__main__":
             ds = FaceFramesSeqPredictionDataset_all_frames(
                 os.path.join(test_labels_dir, name),
                 dataset_root,
-                transform=transform_test,
+                transform=transform_test,max_frames=args.max_frames,
             )
             print(f"loaded {len(ds)} test examples")
 
@@ -539,13 +545,13 @@ if __name__ == "__main__":
 
                 #use tqdm
 
-                with open(os.path.join(resultsdir, "frame_predictions+Test" + stage + "_preds.txt")) as f:
+                with open(os.path.join(resultsdir, "frame_predictions_Test" + stage + "_preds.txt")) as f:
                 
                     
                     for sequences, gt, name in tqdm(dl, desc="Predicting test " + stage):
 
                         print(f"predicting {name}")
-                        print("sequences", sequences.shape)
+                        # print("sequences", sequences.shape)
 
                         predictions = []
 
@@ -560,7 +566,7 @@ if __name__ == "__main__":
                         y = y.cpu().numpy()
                         
                         #print("y", y)
-                        print("y shape", y.shape)
+                        # print("y shape", y.shape)
                         # remove batch dim
 
                         y = y.squeeze(1)
@@ -571,7 +577,7 @@ if __name__ == "__main__":
 
                         predictions = y
                         
-                        print(predictions.shape)
+                        # print(predictions.shape)
                         # Perform prediction on each frame in the video
                         # for frame in sequences:
                         #     print("frame", frame.shape)
@@ -596,7 +602,7 @@ if __name__ == "__main__":
                         # test_frames_scores.append(predictions)
                         min_test_frames_scores.append(min(predictions))
 
-                        f.write(f"{name},{ ','.join([str(x) for x in predictions]) }\n")
+                        f.write(f"{name[0]},{ ','.join([str(x) for x in predictions]) }\n")
 
 
 
