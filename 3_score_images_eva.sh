@@ -1,7 +1,7 @@
 #!/bin/sh
-#SBATCH --job-name=predict_convnext
-#SBATCH --output=predict_convnext_%j.out
-#SBATCH --error=predict_convnext_%j.err
+#SBATCH --job-name=eva_predict
+#SBATCH --output=eva_predict_%j.out
+#SBATCH --error=eva_predict_%j.err
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
