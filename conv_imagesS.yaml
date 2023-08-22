@@ -6,6 +6,13 @@ program: train_convnext_images.py
 command:
   - ${env}
   # - echo
+  - srun
+  - "--nodes=1"
+  - "--cpus-per-task=12"
+  - "--gpus 4"
+  - "-p gpu"
+  - "--ntasks-per-node=4"
+  - "--exclusive"
   - python3
   - ${program}
   - ${args}
