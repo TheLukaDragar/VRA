@@ -500,13 +500,13 @@ if __name__ == "__main__":
         all_test_std = []
         min_test_frames_scores = []
 
-        # Make x_predictions for each stage
-        for i in range(x_predictions):
-            test_labels = []
-            test_names = []
-            test_gt = []
-            test_std = []
-            test_frames_scores = []
+        # # Make x_predictions for each stage
+        # for i in range(x_predictions):
+        #     test_labels = []
+        #     test_names = []
+        #     test_gt = []
+        #     test_std = []
+        #     test_frames_scores = []
 
             # ds = FaceFramesSeqPredictionDataset(
             #     os.path.join(labels_dir, name),
@@ -514,12 +514,12 @@ if __name__ == "__main__":
             #     transform=transform_test,
             #     seq_len=seq_len,
             # )
-            ds = FaceFramesSeqPredictionDataset_all_frames(
-                os.path.join(test_labels_dir, name),
-                dataset_root,
-                transform=transform_test,max_frames=args.max_frames,
-            )
-            print(f"loaded {len(ds)} test examples")
+        ds = FaceFramesSeqPredictionDataset_all_frames(
+            os.path.join(test_labels_dir, name),
+            dataset_root,
+            transform=transform_test,max_frames=args.max_frames,
+        )
+        print(f"loaded {len(ds)} test examples")
 
             # with torch.no_grad():
             #     for x, gt, nameee in ds:
@@ -533,83 +533,83 @@ if __name__ == "__main__":
             #         test_gt.append(gt)
 
             # dataloader
-            dl = DataLoader(
-                    ds,
-                batch_size=1,
-                shuffle=False,
-                num_workers=4,
-                pin_memory=True,
-            )
+        dl = DataLoader(
+                ds,
+            batch_size=1,
+            shuffle=False,
+            num_workers=4,
+            pin_memory=True,
+        )
 
-            with torch.no_grad():
+        with torch.no_grad():
 
-                #use tqdm
+            #use tqdm
 
-                with open(os.path.join(resultsdir, "frame_predictions_Test" + stage + "_preds.txt"),'w') as f:
+            with open(os.path.join(resultsdir, "frame_predictions_Test" + stage + "_preds.txt"),'w') as f:
+            
                 
+                for sequences, gt, name in tqdm(dl, desc="Predicting test " + stage):
+
+                    print(f"predicting {name}")
+                    # print("sequences", sequences.shape)
+
+                    predictions = []
+
+                    # make predictions for each frame in the video
+                    # make a batch of size number of frames in the video
+
+                    sequences = sequences.permute(1, 0, 2, 3, 4)
+                    print("sequences", sequences.shape)
+
+                    sequences = sequences.to(model.device)
+                    y = model(sequences)
+                    y = y.cpu().numpy()
                     
-                    for sequences, gt, name in tqdm(dl, desc="Predicting test " + stage):
+                    #print("y", y)
+                    # print("y shape", y.shape)
+                    # remove batch dim
 
-                        print(f"predicting {name}")
-                        # print("sequences", sequences.shape)
+                    y = y.squeeze(1)
+                    
+                    # print(
+                    #     "y", y
+                    # )  # y is now a list of predictions for each frame in the video
 
-                        predictions = []
+                    predictions = y
+                    
+                    # print(predictions.shape)
+                    # Perform prediction on each frame in the video
+                    # for frame in sequences:
+                    #     print("frame", frame.shape)
+                    #     frame = frame.to(model.device)
+                    #     y = model(frame)
+                    #     y = y.cpu().numpy()
+                    #     print("y", y)
+                    #     print("y shape", y.shape)
 
-                        # make predictions for each frame in the video
-                        # make a batch of size number of frames in the video
+                    #     y = y[0][0]
+                    #     predictions.append(y)
 
-                        sequences = sequences.permute(1, 0, 2, 3, 4)
-                        print("sequences", sequences.shape)
+                    # Compute mean and standard deviation of predictions
+                    mean_prediction = np.mean(predictions)
+                    std_prediction = np.std(predictions)
+                    print("score:",mean_prediction)
+                    print("std:",std_prediction)
+                    test_labels.append(mean_prediction)
+                    test_names.append(name)
+                    test_gt.append(gt)
+                    test_std.append(std_prediction)
+                    # test_frames_scores.append(predictions)
+                    min_test_frames_scores.append(min(predictions))
 
-                        sequences = sequences.to(model.device)
-                        y = model(sequences)
-                        y = y.cpu().numpy()
-                        
-                        #print("y", y)
-                        # print("y shape", y.shape)
-                        # remove batch dim
-
-                        y = y.squeeze(1)
-                        
-                        # print(
-                        #     "y", y
-                        # )  # y is now a list of predictions for each frame in the video
-
-                        predictions = y
-                        
-                        # print(predictions.shape)
-                        # Perform prediction on each frame in the video
-                        # for frame in sequences:
-                        #     print("frame", frame.shape)
-                        #     frame = frame.to(model.device)
-                        #     y = model(frame)
-                        #     y = y.cpu().numpy()
-                        #     print("y", y)
-                        #     print("y shape", y.shape)
-
-                        #     y = y[0][0]
-                        #     predictions.append(y)
-
-                        # Compute mean and standard deviation of predictions
-                        mean_prediction = np.mean(predictions)
-                        std_prediction = np.std(predictions)
-                        print("score:",mean_prediction)
-                        print("std:",std_prediction)
-                        test_labels.append(mean_prediction)
-                        test_names.append(name)
-                        test_gt.append(gt)
-                        test_std.append(std_prediction)
-                        # test_frames_scores.append(predictions)
-                        min_test_frames_scores.append(min(predictions))
-
-                        f.write(f"{name[0]},{ ','.join([str(x) for x in predictions]) }\n")
+                    f.write(f"{name[0]},{ ','.join([str(x) for x in predictions]) }\n")
 
 
 
             print(f"predicted {len(test_labels)} labels for {name}")
 
-            all_test_labels.append(test_labels)
-            all_test_names.append(test_names)
+            all_test_labels = test_labels
+            all_test_names = test_names
             all_test_gt=test_gt
             all_test_std=test_std
             # all_test_frames_scores = test_frames_scores
@@ -621,8 +621,10 @@ if __name__ == "__main__":
         std_test_labels = np.std(all_test_labels, axis=0)
         std_beetwen_frames = np.mean(all_test_std, axis=0)
         # check if all_test_gt has the same values in all the positions
-        if not np.all(all_test_gt == all_test_gt[0]):
-            print("all_test_gt has different values in different positions")
+        # if not np.all(all_test_gt == all_test_gt[0]):
+        #     print("all_test_gt has different values in different positions")
+
+        print(f"all_test_gt: {all_test_gt}")
         mean_test_gt = np.array(all_test_gt)
 
         # Calculate the RMSE between each pair of predictions
