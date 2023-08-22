@@ -16,7 +16,7 @@ command:
 
 
 
-method: bayesian
+method: bayes
 metric:
   goal: minimize
   name: val_loss
