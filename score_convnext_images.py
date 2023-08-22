@@ -543,19 +543,30 @@ if __name__ == "__main__":
                     #make predictions for each frame in the video
                     #make a batch of size number of frames in the video
 
+                    sequences = sequences.permute(1, 0, 2, 3, 4)
+                    print("sequences", sequences.shape)
+
+                    sequences = sequences.to(model.device)
+                    y = model(sequences)
+                    y = y.cpu().numpy()
+                    print("y", y)
+                    print("y shape", y.shape)
+
+                    
+
 
 
                     # Perform prediction on each frame in the video
-                    for frame in sequences:
-                        print("frame", frame.shape)
-                        frame = frame.to(model.device)
-                        y = model(frame)
-                        y = y.cpu().numpy()
-                        print("y", y)
-                        print("y shape", y.shape)
+                    # for frame in sequences:
+                    #     print("frame", frame.shape)
+                    #     frame = frame.to(model.device)
+                    #     y = model(frame)
+                    #     y = y.cpu().numpy()
+                    #     print("y", y)
+                    #     print("y shape", y.shape)
 
-                        y = y[0][0]
-                        predictions.append(y)
+                    #     y = y[0][0]
+                    #     predictions.append(y)
 
                     # Compute mean and standard deviation of predictions
                     mean_prediction = np.mean(predictions)
