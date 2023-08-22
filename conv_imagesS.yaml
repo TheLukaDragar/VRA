@@ -83,6 +83,7 @@ parameters:
       - 11
       - 26
       - -1
+    distribution: categorical
 
     og_checkpoint:
       values:
