@@ -408,6 +408,12 @@ if __name__ == "__main__":
         default=False,
         help="Whether to use data augmentation.",
     )
+    parser.add_argument(
+        "--val_split",
+        type=float,
+        default=0.1,
+        help="Proportion of the dataset to use for validation.",
+    )
 
     # parser.add_argument('--test_labels_dir', default='/d/hpc/projects/FRI/ldragar/label/', help='Path to the test labels directory.')
 
@@ -471,7 +477,7 @@ if __name__ == "__main__":
     )
 
     print("splitting dataset")
-    train_ds, val_ds = train_val_split(face_frames_dataset)
+    train_ds, val_ds = train_val_split(face_frames_dataset,train_prop=(1-args.val_split),val_prop=args.val_split,seed=seed if seed != -1 else None)
 
     print("first 5 train labels")
     for i in range(5):
@@ -581,6 +587,8 @@ if __name__ == "__main__":
     wandb_logger.log_hyperparams({"devices": args.devices})
 
     wandb_logger.log_hyperparams({"augment": args.augmentation})
+
+    wandb_logger.log_hyperparams({"val_split": args.val_split})
 
 
     wandb_run_id = str(wandb_logger.version)

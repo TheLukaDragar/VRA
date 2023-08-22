@@ -1,5 +1,5 @@
 project: luka_vra
-name: vega_convnext_images
+name: vega_convnext_images2
 program: train_convnext_images.py
 
 
@@ -17,7 +17,7 @@ command:
 
 
 
-method: random
+method: bayesian
 metric:
   goal: minimize
   name: val_loss
@@ -38,6 +38,7 @@ parameters:
     values:
       - 4
       - 10
+      - 16
 
     distribution: categorical
 
@@ -51,6 +52,7 @@ parameters:
     distribution: categorical
     values:
       - 0.1
+      - 0.5
 
   max_epochs:
     values:
@@ -68,23 +70,26 @@ parameters:
     values:
       - True
       - False
+
     distribution: categorical
 
-
+  val_split:
+    values:
+      - 0.1
+    distribution: categorical
   
-
-   
-
-  # og_checkpoint:
-  #   value:
-  #     - "./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth"
-  #   distribution: constant
-
   seed:
     values:
-      - 69
+      - 11
       - 26
       - -1
+
+    og_checkpoint:
+      values:
+        - "./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth"
+        - "./borut_models/convnext_xlarge_384_in22ft1k_30.pth"
+      distribution: categorical
+  
 
 
 
