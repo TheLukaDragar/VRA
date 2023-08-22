@@ -374,7 +374,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--max_frames",
         type=int,
-        default=300,
+        default=250,
         help="max frames to use for each video",
     )
 
@@ -534,7 +534,7 @@ if __name__ == "__main__":
 
             # dataloader
             dl = DataLoader(
-                ds,
+                    ds,
                 batch_size=1,
                 shuffle=False,
                 num_workers=4,
@@ -610,8 +610,8 @@ if __name__ == "__main__":
 
             all_test_labels.append(test_labels)
             all_test_names.append(test_names)
-            all_test_gt.append(test_gt)
-            all_test_std.append(test_std)
+            all_test_gt=test_gt
+            all_test_std=test_std
             # all_test_frames_scores = test_frames_scores
             all_test_frames_scores = min_test_frames_scores
 
@@ -623,7 +623,7 @@ if __name__ == "__main__":
         # check if all_test_gt has the same values in all the positions
         if not np.all(all_test_gt == all_test_gt[0]):
             print("all_test_gt has different values in different positions")
-        mean_test_gt = np.array(all_test_gt[0])
+        mean_test_gt = np.array(all_test_gt)
 
         # Calculate the RMSE between each pair of predictions
         rmse_list = []
