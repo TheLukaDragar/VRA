@@ -9,7 +9,7 @@ command:
   - srun
   - "--nodes=1"
   - "--cpus-per-task=12"
-  - "--gpus 4"
+  - "--gpus=4"
   - "-p gpu"
   - "--ntasks-per-node=4"
   - "--exclusive"
