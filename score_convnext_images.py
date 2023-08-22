@@ -526,7 +526,7 @@ if __name__ == "__main__":
             #dataloader
             dl = DataLoader(
                 ds,
-                batch_size=8,
+                batch_size=1,
                 shuffle=False,
                 num_workers=4,
                 pin_memory=True,
@@ -540,12 +540,20 @@ if __name__ == "__main__":
                     
                     predictions = []
 
+                    #make predictions for each frame in the video
+                    #make a batch of size number of frames in the video
+
+
+
                     # Perform prediction on each frame in the video
                     for frame in sequences:
                         print("frame", frame.shape)
                         frame = frame.to(model.device)
                         y = model(frame)
                         y = y.cpu().numpy()
+                        print("y", y)
+                        print("y shape", y.shape)
+
                         y = y[0][0]
                         predictions.append(y)
 
