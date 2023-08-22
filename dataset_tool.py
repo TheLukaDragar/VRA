@@ -762,12 +762,13 @@ class FaceFramesSeqPredictionDataset_all_frames(Dataset):
     It will return a list of frames from the video directory and the MOS score.
     """
 
-    def __init__(self, labels, dataset_root, transform=None):
+    def __init__(self, labels, dataset_root, transform=None,max_frames=300):
         self.video_list_file = labels
         self.dataset_root = dataset_root
         self.transform = transform
         self.names = []
         self.mos_labels = []
+        self.max_frames = max_frames
 
         lines = []
 
@@ -788,7 +789,13 @@ class FaceFramesSeqPredictionDataset_all_frames(Dataset):
         mos_label = self.mos_labels[index]
 
         frame_names = sorted(os.listdir(video_dir))
-        
+
+
+        if len(frame_names) > self.max_frames:
+            print(f"Video directory: {video_dir} has {len(frame_names)} frames which is more than {self.max_frames} frames")
+            frame_names = frame_names[:self.max_frames]
+            
+            
 
         # Read and transform the frames
         frames = []
