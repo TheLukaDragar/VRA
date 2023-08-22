@@ -37,6 +37,7 @@ parameters:
     values:
       - 4
       - 10
+      - 20
 
     distribution: categorical
 
@@ -82,7 +83,6 @@ parameters:
   seed:
     values:
       - 69
-      - 26
       - -1
 
 
