@@ -593,13 +593,21 @@ if __name__ == "__main__":
                     # Compute mean and standard deviation of predictions
                     mean_prediction = np.mean(predictions)
                     std_prediction = np.std(predictions)
-                    print("score:",mean_prediction)
-                    print("std:",std_prediction)
-                    test_labels.append(mean_prediction)
-                    test_names.append(name)
-                    test_gt.append(gt)
-                    test_std.append(std_prediction)
-                    # test_frames_scores.append(predictions)
+                    # print("score:",mean_prediction)
+                    # print("std:",std_prediction)
+                    # test_labels.append(mean_prediction)
+                    # test_names.append(name)
+                    # test_gt.append(gt)
+                    # test_std.append(std_prediction)
+                    # # test_frames_scores.append(predictions)
+                    # min_test_frames_scores.append(min(predictions))
+
+
+
+                    all_test_labels.append(mean_prediction)
+                    all_test_names.append(name)
+                    all_test_gt.append(gt)
+                    all_test_std.append(std_prediction)
                     min_test_frames_scores.append(min(predictions))
 
                     f.write(f"{name[0]},{ ','.join([str(x) for x in predictions]) }\n")
@@ -608,18 +616,14 @@ if __name__ == "__main__":
 
             print(f"predicted {len(test_labels)} labels for {name}")
 
-            all_test_labels = test_labels
-            all_test_names = test_names
-            all_test_gt=test_gt
-            all_test_std=test_std
-            # all_test_frames_scores = test_frames_scores
-            all_test_frames_scores = min_test_frames_scores
+           
 
-        # Calculate the mean and standard deviation of the predictions
-        all_test_labels = np.array(all_test_labels)
-        mean_test_labels = np.mean(all_test_labels, axis=0)
-        std_test_labels = np.std(all_test_labels, axis=0)
-        std_beetwen_frames = np.mean(all_test_std, axis=0)
+        # # Calculate the mean and standard deviation of the predictions
+        # all_test_labels = np.array(all_test_labels)
+        mean_test_labels = all_test_labels
+        # mean_test_labels = np.mean(all_test_labels, axis=0)
+        # std_test_labels = np.std(all_test_labels, axis=0)
+        # std_beetwen_frames = np.mean(all_test_std, axis=0)
         # check if all_test_gt has the same values in all the positions
         # if not np.all(all_test_gt == all_test_gt[0]):
         #     print("all_test_gt has different values in different positions")
@@ -628,26 +632,26 @@ if __name__ == "__main__":
         mean_test_gt = np.array(all_test_gt)
 
         # Calculate the RMSE between each pair of predictions
-        rmse_list = []
-        for i in range(x_predictions):
-            for j in range(i + 1, x_predictions):
-                rmse = np.sqrt(np.mean((all_test_labels[i] - all_test_labels[j]) ** 2))
-                rmse_list.append(rmse)
+        # rmse_list = []
+        # for i in range(x_predictions):
+        #     for j in range(i + 1, x_predictions):
+        #         rmse = np.sqrt(np.mean((all_test_labels[i] - all_test_labels[j]) ** 2))
+        #         rmse_list.append(rmse)
 
-        print(f"RMSE between predictions: {rmse_list}")
+        # print(f"RMSE between predictions: {rmse_list}")
 
         # Save the mean predictions to a file
         with open(os.path.join(resultsdir, "Test" + stage + "_preds.txt"), "w") as f:
-            for i in range(len(all_test_names[0])):
-                f.write(f"{all_test_names[0][i]},{mean_test_labels[i]}\n")
+            for i in range(len(all_test_names)):
+                f.write(f"{all_test_names[i]},{mean_test_labels[i]}\n")
 
         # save std beetwen frames
         with open(
-            os.path.join(resultsdir, "std_beetwen_frames+Test" + stage + "_preds.txt"),
+            os.path.join(resultsdir, "std_beetwen_frames_Test" + stage + "_preds.txt"),
             "w",
         ) as f:
-            for i in range(len(std_beetwen_frames)):
-                f.write(f"{std_beetwen_frames[i]}\n")
+            for i in range(len(all_test_names)):
+                f.write(f"{all_test_names[i]},{all_test_std[i]}\n")
 
         # # save all predictions for each frame
         # with open(
@@ -663,11 +667,10 @@ if __name__ == "__main__":
 
         # save lowest
         with open(
-            os.path.join(resultsdir, "lowest+Test" + stage + "_preds.txt"), "w"
+            os.path.join(resultsdir, "lowest_Test" + stage + "_preds.txt"), "w"
         ) as f:
-            for i in range(len(all_test_frames_scores)):
-                min_value =all_test_frames_scores[i]
-                f.write(f"{all_test_names[0][i]},{min_value}\n")
+            for i in range(len(all_test_names)):
+                f.write(f"{all_test_names[i]},{min_test_frames_scores[i]}\n")
 
         if stage == "1":
             t1 = mean_test_labels
@@ -707,9 +710,9 @@ if __name__ == "__main__":
         f.write(f"final_score,{final_score}\n")
 
     # save std beetwen frames
-    with open(os.path.join(resultsdir, "std_beetwen_frames.txt"), "w") as f:
-        for i in range(len(std_beetwen_frames)):
-            f.write(f"{std_beetwen_frames[i]}\n")
+    # with open(os.path.join(resultsdir, "std_beetwen_frames.txt"), "w") as f:
+    #     for i in range(len(std_beetwen_frames)):
+    #         f.write(f"{std_beetwen_frames[i]}\n")
 
     # # compute mae beetwen submitet result
 
