@@ -85,11 +85,11 @@ parameters:
       - -1
     distribution: categorical
 
-    og_checkpoint:
-      values:
-        - "./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth"
-        - "./borut_models/convnext_xlarge_384_in22ft1k_30.pth"
-      distribution: categorical
+  og_checkpoint:
+    values:
+      - "./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth"
+      - "./borut_models/convnext_xlarge_384_in22ft1k_30.pth"
+    distribution: categorical
   
 
 
