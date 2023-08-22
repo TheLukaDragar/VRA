@@ -398,9 +398,14 @@ class RandomSeqFaceFramesDataset(Dataset):
         if frame_count == 0:
             print(video_dir)
 
-        # Choose a random starting frame and get the sequence of frames
-        start_frame = random.randint(0, max(0, frame_count - self.seq_len))
-        frame_sequence = frame_names[start_frame : start_frame + self.seq_len]
+
+        #chose seq_len random frames
+        frame_sequence = random.sample(frame_names, self.seq_len)
+
+
+        # # Choose a random starting frame and get the sequence of frames
+        # start_frame = random.randint(0, max(0, frame_count - self.seq_len))
+        # frame_sequence = frame_names[start_frame : start_frame + self.seq_len]
 
         # Logging the chosen start frame and sequence
         # print(f"Video directory: {video_dir}")
