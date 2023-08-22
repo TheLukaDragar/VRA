@@ -17,6 +17,15 @@
 source /ceph/hpc/data/st2207-pgp-users/ldragar/miniconda3/etc/profile.d/conda.sh
 conda activate  /ceph/hpc/data/st2207-pgp-users/ldragar/pytorch_env
 
-wandb_agent='luka_borut/luka_vra/bhz0zrx7'
+
+if [ $# -eq 0 ]
+  then
+    echo "No arguments supplied"
+    exit 1
+fi
+
+export WANDB__SERVICE_WAIT=300
+
+wandb_agent=$1
 #script is made to run on 1 node with 1 gpu
 wandb agent $wandb_agent 
