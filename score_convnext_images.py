@@ -604,10 +604,10 @@ if __name__ == "__main__":
 
 
 
-                    all_test_labels.append(mean_prediction)
+                    all_test_labels.append(mean_prediction.item())
                     all_test_names.append(name[0])
-                    all_test_gt.append(gt)
-                    all_test_std.append(std_prediction)
+                    all_test_gt.append(gt.item())
+                    all_test_std.append(std_prediction.item())
                     min_test_frames_scores.append(min(predictions))
 
                     f.write(f"{name[0]},{ ','.join([str(x) for x in predictions]) }\n")
