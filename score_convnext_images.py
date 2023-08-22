@@ -614,7 +614,7 @@ if __name__ == "__main__":
 
 
 
-            print(f"predicted {len(test_labels)} labels for {name}")
+            print(f"predicted {len(all_test_labels)} labels for {name}")
 
            
 
