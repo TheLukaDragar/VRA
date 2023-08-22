@@ -17,6 +17,6 @@
 source /ceph/hpc/data/st2207-pgp-users/ldragar/miniconda3/etc/profile.d/conda.sh
 conda activate  /ceph/hpc/data/st2207-pgp-users/ldragar/pytorch_env
 
-wandb_agent='ldragar/convnext/47qukgop'
+wandb_agent='luka_borut/luka_vra/bhz0zrx7'
 #script is made to run on 1 node with 1 gpu
-srun --nodes=1 --exclusive --gpus=4 --ntasks-per-node=4 --cpus-per-task=12 --time=1-10:00:00 -p gpu wandb agent $wandb_agent
+wandb agent $wandb_agent 
