@@ -491,6 +491,7 @@ if __name__ == "__main__":
         all_test_names = []
         all_test_gt = []
         all_test_std = []
+        all_test_frames_scores = []
 
         # Make x_predictions for each stage
         for i in range(x_predictions):
@@ -498,6 +499,7 @@ if __name__ == "__main__":
             test_names = []
             test_gt = []
             test_std = []
+            test_frames_scores = []
 
             # ds = FaceFramesSeqPredictionDataset(
             #     os.path.join(labels_dir, name),
@@ -551,8 +553,12 @@ if __name__ == "__main__":
                     y = y.cpu().numpy()
                     print("y", y)
                     print("y shape", y.shape)
+                    #remove batch dim
+                    y = y[0]
+                    print("y", y) # y is now a list of predictions for each frame in the video
 
-                    
+                    predictions = y
+
 
 
 
@@ -575,6 +581,7 @@ if __name__ == "__main__":
                     test_names.append(name)
                     test_gt.append(gt)
                     test_std.append(std_prediction)
+                    test_frames_scores.append(predictions)
 
 
 
@@ -585,6 +592,7 @@ if __name__ == "__main__":
             all_test_names.append(test_names)
             all_test_gt.append(test_gt)
             all_test_std.append(test_std)
+            all_test_frames_scores = test_frames_scores
 
         # Calculate the mean and standard deviation of the predictions
         all_test_labels = np.array(all_test_labels)
@@ -617,10 +625,10 @@ if __name__ == "__main__":
 
        #save all predictions for each frame
         with open(os.path.join(resultsdir, "frame_predictions+Test" + stage + "_preds.txt"), "w") as f:
-            for i in range(len(all_test_labels)):
+            for i in range(len(all_test_frames_scores)):
                 line = ""
-                for j in range(len(all_test_labels[i])):
-                    line += str(all_test_labels[i][j]) + ","
+                for j in range(len(all_test_frames_scores[i])):
+                    line += str(all_test_frames_scores[i][j]) + ","
 
                 f.write(f"{line}\n")
 
