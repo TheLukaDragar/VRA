@@ -367,6 +367,7 @@ if __name__ == "__main__":
         default="./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth",
         help="DFGC1st convnext_xlarge_384_in22ft1k_30.pth file path",
     )
+    #stage array
 
     args = parser.parse_args()
 
@@ -522,8 +523,18 @@ if __name__ == "__main__":
             #         test_names.append(nameee)
             #         test_gt.append(gt)
 
+            #dataloader
+            dl = DataLoader(
+                ds,
+                batch_size=8,
+                shuffle=False,
+                num_workers=4,
+                pin_memory=True,
+            )
+
+
             with torch.no_grad():
-                for sequences, gt, name in ds:
+                for sequences, gt, name in dl:
                     print(f"predicting {name}")
                     print("sequences", sequences.shape)
                     
@@ -531,7 +542,8 @@ if __name__ == "__main__":
 
                     # Perform prediction on each frame in the video
                     for frame in sequences:
-                        frame = frame.unsqueeze(0).unsqueeze(0).to(model.device)
+                        print("frame", frame.shape)
+                        frame = frame.to(model.device)
                         y = model(frame)
                         y = y.cpu().numpy()
                         y = y[0][0]
