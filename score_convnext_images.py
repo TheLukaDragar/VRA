@@ -3,7 +3,10 @@ import os
 import warnings
 
 print("importing modules")
-from dataset_tool import RandomSeqFaceFramesDataset, FaceFramesSeqPredictionDataset_all_frames
+from dataset_tool import (
+    RandomSeqFaceFramesDataset,
+    FaceFramesSeqPredictionDataset_all_frames,
+)
 from dataset_tool import build_transforms
 
 print("imported dataset_1")
@@ -38,6 +41,10 @@ import wandb
 import random
 import numpy as np
 from lightning.pytorch import seed_everything
+
+#tqdm
+from tqdm import tqdm
+
 
 
 def train_val_test_split(dataset, train_prop=0.7, val_prop=0.2, test_prop=0.1):
@@ -129,11 +136,7 @@ class ConvNeXt(pl.LightningModule):
         else:
             raise ValueError("Invalid loss function")
 
-
         self.save_hyperparameters()
-
-
-        
 
     def RMSE(self, preds, y):
         mse = self.mse(preds.view(-1), y.view(-1))
@@ -147,7 +150,9 @@ class ConvNeXt(pl.LightningModule):
         x_random_frame = x[torch.arange(x.shape[0]), random_idx]
 
         # Process the selected frame with the backbone
-        features = self.backbone(x_random_frame)  # Output shape: (batch_size, n_features)
+        features = self.backbone(
+            x_random_frame
+        )  # Output shape: (batch_size, n_features)
 
         # Optionally, you can continue with further processing as needed
         x = self.drop(features)
@@ -175,8 +180,6 @@ class ConvNeXt(pl.LightningModule):
             sync_dist=True,
         )
 
-
-
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -195,7 +198,7 @@ class ConvNeXt(pl.LightningModule):
             sync_dist=True,
         )
 
-        #if loss is nan.0 then stop training
+        # if loss is nan.0 then stop training
         if math.isnan(loss_value):
             print("val_loss is nan.0 stopping training")
             self.trainer.should_stop = True
@@ -216,17 +219,16 @@ class ConvNeXt(pl.LightningModule):
         plcc = self.pearson_corr_coef_mine(preds.view(-1), y.view(-1))
         loss = 1 - torch.abs(plcc)
         return loss
-       
 
     def kl_div_loss(self, preds, target, eps=1e-8):
         preds_softmax = torch.nn.functional.softmax(preds, dim=-1)
         target_softmax = torch.nn.functional.softmax(target, dim=-1)
         loss = torch.sum(
-            target_softmax * torch.log((target_softmax + eps) / (preds_softmax + eps)), dim=-1
+            target_softmax * torch.log((target_softmax + eps) / (preds_softmax + eps)),
+            dim=-1,
         )
         loss = torch.mean(loss)
         return loss
-
 
     def norm_loss_with_normalization(self, pred, target, p=1, q=2):
         """
@@ -251,7 +253,6 @@ class ConvNeXt(pl.LightningModule):
 
     def MAE(self, preds, y):
         return self.mae(preds.view(-1), y.view(-1))
-
 
     def configure_optimizers(self):
         optimizer = AdamW(self.parameters(), lr=2e-5)
@@ -331,7 +332,9 @@ if __name__ == "__main__":
     )
     # parser.add_argument('--cp_save_dir', default='/d/hpc/projects/FRI/ldragar/checkpoints/', help='Path to save checkpoints.')
     parser.add_argument(
-        "--model_dir", default="./convnext_models_images/", help="Path to save the final model."
+        "--model_dir",
+        default="./convnext_models_images/",
+        help="Path to save the final model.",
     )
     parser.add_argument("--batch_size", type=int, default=2, help="Batch size.")
     parser.add_argument("--seq_len", type=int, default=5, help="Sequence length.")
@@ -367,13 +370,13 @@ if __name__ == "__main__":
         default="./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth",
         help="DFGC1st convnext_xlarge_384_in22ft1k_30.pth file path",
     )
-    #stage array
+    # stage array
 
     args = parser.parse_args()
 
     print("starting")
     dataset_root = args.dataset_root
-    #labels_dir = args.labels_dir
+    # labels_dir = args.labels_dir
     model_dir = args.model_dir
     batch_size = args.batch_size
     seq_len = args.seq_len
@@ -396,8 +399,6 @@ if __name__ == "__main__":
         norm_mean=[0.485, 0.456, 0.406],
         norm_std=[0.229, 0.224, 0.225],
     )
-
-    
 
     model = ConvNeXt(
         og_path, model_name="convnext_xlarge_384_in22ft1k", dropout=0.1, loss="rmse"
@@ -525,7 +526,7 @@ if __name__ == "__main__":
             #         test_names.append(nameee)
             #         test_gt.append(gt)
 
-            #dataloader
+            # dataloader
             dl = DataLoader(
                 ds,
                 batch_size=1,
@@ -534,16 +535,20 @@ if __name__ == "__main__":
                 pin_memory=True,
             )
 
-
             with torch.no_grad():
-                for sequences, gt, name in dl:
+
+                #use tqdm
+                
+                
+                for sequences, gt, name in tqdm(dl, desc="Predicting test " + stage):
+
                     print(f"predicting {name}")
                     print("sequences", sequences.shape)
-                    
+
                     predictions = []
 
-                    #make predictions for each frame in the video
-                    #make a batch of size number of frames in the video
+                    # make predictions for each frame in the video
+                    # make a batch of size number of frames in the video
 
                     sequences = sequences.permute(1, 0, 2, 3, 4)
                     print("sequences", sequences.shape)
@@ -551,16 +556,15 @@ if __name__ == "__main__":
                     sequences = sequences.to(model.device)
                     y = model(sequences)
                     y = y.cpu().numpy()
-                    print("y", y)
-                    print("y shape", y.shape)
-                    #remove batch dim
+                    # print("y", y)
+                    # print("y shape", y.shape)
+                    # remove batch dim
                     y = y[0]
-                    print("y", y) # y is now a list of predictions for each frame in the video
+                    # print(
+                    #     "y", y
+                    # )  # y is now a list of predictions for each frame in the video
 
                     predictions = y
-
-
-
 
                     # Perform prediction on each frame in the video
                     # for frame in sequences:
@@ -582,9 +586,6 @@ if __name__ == "__main__":
                     test_gt.append(gt)
                     test_std.append(std_prediction)
                     test_frames_scores.append(predictions)
-
-
-
 
             print(f"predicted {len(test_labels)} labels for {name}")
 
@@ -618,13 +619,19 @@ if __name__ == "__main__":
             for i in range(len(all_test_names[0])):
                 f.write(f"{all_test_names[0][i]},{mean_test_labels[i]}\n")
 
-        #save std beetwen frames
-        with open(os.path.join(resultsdir, "std_beetwen_frames+Test" + stage + "_preds.txt"), "w") as f:
+        # save std beetwen frames
+        with open(
+            os.path.join(resultsdir, "std_beetwen_frames+Test" + stage + "_preds.txt"),
+            "w",
+        ) as f:
             for i in range(len(std_beetwen_frames)):
                 f.write(f"{std_beetwen_frames[i]}\n")
 
-       #save all predictions for each frame
-        with open(os.path.join(resultsdir, "frame_predictions+Test" + stage + "_preds.txt"), "w") as f:
+        # save all predictions for each frame
+        with open(
+            os.path.join(resultsdir, "frame_predictions+Test" + stage + "_preds.txt"),
+            "w",
+        ) as f:
             for i in range(len(all_test_frames_scores)):
                 line = ""
                 for j in range(len(all_test_frames_scores[i])):
@@ -632,8 +639,13 @@ if __name__ == "__main__":
 
                 f.write(f"{line}\n")
 
-        
-
+        # save lowest
+        with open(
+            os.path.join(resultsdir, "lowest+Test" + stage + "_preds.txt"), "w"
+        ) as f:
+            for i in range(len(all_test_frames_scores)):
+                min_value = min(all_test_frames_scores[i])
+                f.write(f"{all_test_names[0][i]},{min_value}\n")
 
         if stage == "1":
             t1 = mean_test_labels
@@ -676,8 +688,6 @@ if __name__ == "__main__":
     with open(os.path.join(resultsdir, "std_beetwen_frames.txt"), "w") as f:
         for i in range(len(std_beetwen_frames)):
             f.write(f"{std_beetwen_frames[i]}\n")
-
-
 
     # # compute mae beetwen submitet result
 
