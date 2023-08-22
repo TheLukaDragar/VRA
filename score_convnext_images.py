@@ -556,16 +556,20 @@ if __name__ == "__main__":
                     sequences = sequences.to(model.device)
                     y = model(sequences)
                     y = y.cpu().numpy()
-                    # print("y", y)
-                    # print("y shape", y.shape)
+                    
+                    #print("y", y)
+                    print("y shape", y.shape)
                     # remove batch dim
-                    y = y[0]
+
+                    y = y.squeeze(1)
+                    
                     # print(
                     #     "y", y
                     # )  # y is now a list of predictions for each frame in the video
 
                     predictions = y
-
+                    
+                    print(predictions.shape)
                     # Perform prediction on each frame in the video
                     # for frame in sequences:
                     #     print("frame", frame.shape)
@@ -581,6 +585,8 @@ if __name__ == "__main__":
                     # Compute mean and standard deviation of predictions
                     mean_prediction = np.mean(predictions)
                     std_prediction = np.std(predictions)
+                    print("score:",mean_prediction)
+                    print("std:",std_prediction)
                     test_labels.append(mean_prediction)
                     test_names.append(name)
                     test_gt.append(gt)
