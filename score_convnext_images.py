@@ -605,7 +605,7 @@ if __name__ == "__main__":
 
 
                     all_test_labels.append(mean_prediction)
-                    all_test_names.append(name)
+                    all_test_names.append(name.item())
                     all_test_gt.append(gt)
                     all_test_std.append(std_prediction)
                     min_test_frames_scores.append(min(predictions))
@@ -673,16 +673,16 @@ if __name__ == "__main__":
                 f.write(f"{all_test_names[i]},{min_test_frames_scores[i]}\n")
 
         if stage == "1":
-            t1 = mean_test_labels
-            gt1 = mean_test_gt
+            t1 = np.array(mean_test_labels)
+            gt1 = np.array(mean_test_gt)
 
         if stage == "2":
-            t2 = mean_test_labels
-            gt2 = mean_test_gt
+            t2 = np.array(mean_test_labels)
+            gt2 = np.array(mean_test_gt)
 
         if stage == "3":
-            t3 = mean_test_labels
-            gt3 = mean_test_gt
+            t3 = np.array(mean_test_labels)
+            gt3 = np.array(mean_test_gt)
 
         print(
             f"saved {len(mean_test_labels)} predictions to {os.path.join(resultsdir, 'Test'+stage+'_preds.txt')}"
