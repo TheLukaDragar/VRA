@@ -583,7 +583,7 @@ if __name__ == "__main__":
 
     if args.from_cp_id != "None":
         print("loading model from checkpoint"+args.from_cp_id)
-        model.load_state_dict(os.path.join(final_model_save_dir, args.from_cp_id, f"{args.from_cp_id}.pt"))
+        model.load_state_dict(os.path.join(final_model_save_dir, f"{args.from_cp_id}.pt"))
 
     wandb_logger.watch(model, log="all", log_freq=100)
     # log batch size
