@@ -409,7 +409,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_nodes", type=int, default=1, help="Number of nodes.")
     # devices array
     parser.add_argument(
-        "--devices", nargs="+", type=int, default=[0, 1], help="Devices to train on."
+        "--devices", nargs="+", type=int, default=[0, 1,2,3], help="Devices to train on."
     )
     # drop out
     parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate.")
