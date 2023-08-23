@@ -1,5 +1,5 @@
 project: luka_vra
-name: vega_eva_images2
+name: vega_eva_images3
 program: train_eva_images.py
 
 command:
@@ -23,7 +23,7 @@ command:
 
 
 
-method: bayes
+method: random
 metric:
   goal: minimize
   name: val_loss
@@ -45,13 +45,13 @@ parameters:
       - 4
       - 10
       - 16
+      - 24
 
     distribution: categorical
 
   accumulate_grad_batches:
     values:
       - 1
-      - 2
     distribution: categorical
 
   dropout:
@@ -62,6 +62,7 @@ parameters:
 
   max_epochs:
     values:
+      - 8
       - 16
       - 32
     distribution: categorical
@@ -86,8 +87,6 @@ parameters:
   
   seed:
     values:
-      - 11
-      - 26
       - -1
     distribution: categorical
   
