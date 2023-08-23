@@ -437,8 +437,7 @@ if __name__ == "__main__":
     )
 
     model = Ensamble(
-        og_path, model_name="convnext_xlarge_384_in22ft1k",model_name2="eva_large_patch14_336.in22k_ft_in22k_in1k",
-         dropout=args.dropout, loss=args.loss,lr=args.lr
+        og_path, model_name="convnext_xlarge_384_in22ft1k",model_name2="eva_large_patch14_336.in22k_ft_in22k_in1k"
     )
     # load checkpoint
     # get files in dir
