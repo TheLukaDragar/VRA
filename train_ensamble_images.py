@@ -64,7 +64,7 @@ def train_val_split(dataset, train_prop=0.8, val_prop=0.2, seed=None):
 
 
 class Ensamble(pl.LightningModule):
-    def __init__(self, og_path, model_name="convnext_tiny",  model_name2="eva_large_patch14_336.in22k_ft_in22k_in1k", loss="rmse", lr=2e-5):
+    def __init__(self, og_path, model_name="convnext_tiny",  model_name2="eva_large_patch14_336.in22k_ft_in22k_in1k", loss="rmse", lr=2e-5, dropout=0.1):
         super(Ensamble, self).__init__()
         self.model_name = model_name + model_name2
        
