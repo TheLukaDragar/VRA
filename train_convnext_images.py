@@ -415,6 +415,13 @@ if __name__ == "__main__":
         help="Proportion of the dataset to use for validation.",
     )
 
+    parser.add_argument(
+        "--from_cp_id",
+        default="None",
+        help="Resume training from checkpoint id.",
+    )
+
+
     # parser.add_argument('--test_labels_dir', default='/d/hpc/projects/FRI/ldragar/label/', help='Path to the test labels directory.')
 
     args = parser.parse_args()
@@ -573,6 +580,10 @@ if __name__ == "__main__":
     model = ConvNeXt(
         og_path, model_name="convnext_xlarge_384_in22ft1k", dropout=args.dropout, loss=args.loss,lr=args.lr
     )
+
+    if args.from_cp_id != "None":
+        print("loading model from checkpoint"+args.from_cp_id)
+        model.load_state_dict(os.path.join(final_model_save_dir, args.from_cp_id, f"{args.from_cp_id}.pt"))
 
     wandb_logger.watch(model, log="all", log_freq=100)
     # log batch size
