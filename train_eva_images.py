@@ -398,6 +398,12 @@ if __name__ == "__main__":
         default=0.1,
         help="Proportion of the dataset to use for validation.",
     )
+    parser.add_argument(
+        "--from_cp_id",
+        default="None",
+        help="Resume training from checkpoint id.",
+    )
+
 
     # parser.add_argument('--test_labels_dir', default='/d/hpc/projects/FRI/ldragar/label/', help='Path to the test labels directory.')
 
