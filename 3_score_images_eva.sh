@@ -19,7 +19,7 @@ conda activate  /ceph/hpc/data/st2207-pgp-users/ldragar/pytorch_env
 
 
 out_predictions_dir='./predictions/'
-cp_id='vgmu4sbz' 
+cp_id=$1 
 
 
 #script is made to run on 1 node with 1 gpu
