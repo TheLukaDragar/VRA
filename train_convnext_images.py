@@ -582,8 +582,10 @@ if __name__ == "__main__":
     )
 
     if args.from_cp_id != "None":
-        print("loading model from checkpoint"+args.from_cp_id)
-        model.load_state_dict(os.path.join(final_model_save_dir, f"{args.from_cp_id}.pt"))
+        checkpoint_path = os.path.join(final_model_save_dir, f"{args.from_cp_id}.pt")
+        print(f"loading model from checkpoint {checkpoint_path}")
+        state_dict = torch.load(checkpoint_path)
+        model.load_state_dict(state_dict)
 
     wandb_logger.watch(model, log="all", log_freq=100)
     # log batch size
