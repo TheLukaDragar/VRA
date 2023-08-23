@@ -572,7 +572,7 @@ if __name__ == "__main__":
         loss=args.loss,
     )
     if args.from_cp_id != "None":
-        checkpoint_path = os.path.join(final_model_save_dir, f"{args.from_cp_id}.pt")
+        checkpoint_path = os.path.join(final_model_save_dir,args.from_cp_id,f"{args.from_cp_id}.pt")
         print(f"loading model from checkpoint {checkpoint_path}")
         state_dict = torch.load(checkpoint_path)
         model.load_state_dict(state_dict)
