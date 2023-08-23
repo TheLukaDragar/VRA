@@ -1,0 +1,7 @@
+cp_id,e6ujhy7s
+seed,-1
+args,Namespace(dataset_root='../dataset', labels_dir='./label/', model_dir='./eva_models_images/', batch_size=2, seq_len=5, seed=-1, cp_id='e6ujhy7s', x_predictions=1, out_predictions_dir='./predictions/', test_labels_dir='./competition_end_groundtruth/', max_frames=250)
+test_set1_score,{'pearson_corr_coef': 0.790128766966646, 'spearman_corr_coef': 0.742609367495533, 'rmse': 0.46149000997558803}
+test_set2_score,{'pearson_corr_coef': 0.922464483521771, 'spearman_corr_coef': 0.9122831677957046, 'rmse': 0.3418650125693281}
+test_set3_score,{'pearson_corr_coef': 0.8590123231446947, 'spearman_corr_coef': 0.8128195615946223, 'rmse': 0.4192977035154988}
+final_score,0.8398862784198288
