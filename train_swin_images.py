@@ -409,7 +409,7 @@ if __name__ == "__main__":
     print("starting")
     dataset_root = args.dataset_root
     labels_file = args.labels_file
-    og_path = args.og_checkpoint
+    # og_path = args.og_checkpoint
     final_model_save_dir = args.final_model_save_dir
     batch_size = args.batch_size
     seq_len = args.seq_len
@@ -557,7 +557,7 @@ if __name__ == "__main__":
 
     # convnext_xlarge_384_in22ft1k
     model = Swin(
-        og_path, model_name="swin_large_patch4_window12_384", dropout=args.dropout, loss=args.loss,lr=args.lr
+         model_name="swin_large_patch4_window12_384", dropout=args.dropout, loss=args.loss,lr=args.lr
     )
 
     wandb_logger.watch(model, log="all", log_freq=100)
