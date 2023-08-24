@@ -3,7 +3,10 @@ import os
 import warnings
 
 print("importing modules")
-from dataset_tool import RandomSeqFaceFramesDataset, FaceFramesSeqPredictionDataset_middle_frames
+from dataset_tool import (
+    RandomSeqFaceFramesDataset,
+    FaceFramesSeqPredictionDataset_middle_frames,
+)
 from dataset_tool import build_transforms
 import math
 
@@ -64,7 +67,13 @@ def train_val_split(dataset, train_prop=0.8, val_prop=0.2, seed=None):
 
 
 class Swin(pl.LightningModule):
-    def __init__(self, model_name="swin_large_patch4_window12_384", dropout=0.1, loss="rmse", lr=2e-5):
+    def __init__(
+        self,
+        model_name="swin_large_patch4_window12_384",
+        dropout=0.1,
+        loss="rmse",
+        lr=2e-5,
+    ):
         super(Swin, self).__init__()
         self.model_name = model_name
         self.backbone = create_model(self.model_name, pretrained=True, num_classes=2)
@@ -137,11 +146,7 @@ class Swin(pl.LightningModule):
         else:
             raise ValueError("Invalid loss function")
 
-
         self.save_hyperparameters()
-
-
-        
 
     def RMSE(self, preds, y):
         mse = self.mse(preds.view(-1), y.view(-1))
@@ -155,7 +160,9 @@ class Swin(pl.LightningModule):
         x_random_frame = x[torch.arange(x.shape[0]), random_idx]
 
         # Process the selected frame with the backbone
-        features = self.backbone(x_random_frame)  # Output shape: (batch_size, n_features)
+        features = self.backbone(
+            x_random_frame
+        )  # Output shape: (batch_size, n_features)
 
         # Optionally, you can continue with further processing as needed
         x = self.drop(features)
@@ -183,8 +190,6 @@ class Swin(pl.LightningModule):
             sync_dist=True,
         )
 
-
-
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -203,7 +208,7 @@ class Swin(pl.LightningModule):
             sync_dist=True,
         )
 
-        #if loss is nan.0 then stop training
+        # if loss is nan.0 then stop training
         if math.isnan(loss_value):
             print("val_loss is nan.0 stopping training")
             self.trainer.should_stop = True
@@ -224,17 +229,16 @@ class Swin(pl.LightningModule):
         plcc = self.pearson_corr_coef_mine(preds.view(-1), y.view(-1))
         loss = 1 - torch.abs(plcc)
         return loss
-       
 
     def kl_div_loss(self, preds, target, eps=1e-8):
         preds_softmax = torch.nn.functional.softmax(preds, dim=-1)
         target_softmax = torch.nn.functional.softmax(target, dim=-1)
         loss = torch.sum(
-            target_softmax * torch.log((target_softmax + eps) / (preds_softmax + eps)), dim=-1
+            target_softmax * torch.log((target_softmax + eps) / (preds_softmax + eps)),
+            dim=-1,
         )
         loss = torch.mean(loss)
         return loss
-
 
     def norm_loss_with_normalization(self, pred, target, p=1, q=2):
         """
@@ -259,7 +263,6 @@ class Swin(pl.LightningModule):
 
     def MAE(self, preds, y):
         return self.mae(preds.view(-1), y.view(-1))
-
 
     def configure_optimizers(self):
         optimizer = AdamW(self.parameters(), lr=self.lr)
@@ -387,7 +390,11 @@ if __name__ == "__main__":
     parser.add_argument("--num_nodes", type=int, default=1, help="Number of nodes.")
     # devices array
     parser.add_argument(
-        "--devices", nargs="+", type=int, default=[0, 1,2,3], help="Devices to train on."
+        "--devices",
+        nargs="+",
+        type=int,
+        default=[0, 1, 2, 3],
+        help="Devices to train on.",
     )
     # drop out
     parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate.")
@@ -399,9 +406,15 @@ if __name__ == "__main__":
         default="rmse",
         help="Loss function to use. Supported values: mse, rmse, mae, norm_loss_with_normalization, opdai, hust",
     )
-    #lr
+    # lr
     parser.add_argument("--lr", type=float, default=2e-5, help="Learning rate.")
 
+    parser.add_argument(
+        "--val_split",
+        type=float,
+        default=0.1,
+        help="Proportion of the dataset to use for validation.",
+    )
 
     parser.add_argument(
         "--augmentation",
@@ -439,13 +452,18 @@ if __name__ == "__main__":
         384,
         max_pixel_value=255.0,
         norm_mean=[0.485, 0.456, 0.406],
-        norm_std=[0.229, 0.224, 0.225],augment=args.augmentation
+        norm_std=[0.229, 0.224, 0.225],
+        augment=args.augmentation,
     )
 
     print("loading dataset")
 
     face_frames_dataset = RandomSeqFaceFramesDataset(
-        dataset_root, labels_file, transform=transform_train, seq_len=seq_len,seed= seed if seed != -1 else None
+        dataset_root,
+        labels_file,
+        transform=transform_train,
+        seq_len=seq_len,
+        seed=seed if seed != -1 else None,
     )
 
     face_frames_dataset_test1 = FaceFramesSeqPredictionDataset_middle_frames(
@@ -453,25 +471,30 @@ if __name__ == "__main__":
         dataset_root,
         transform=transform_test,
         seq_len=1,
-        seed = seed if seed != -1 else None
+        seed=seed if seed != -1 else None,
     )
     face_frames_dataset_test2 = FaceFramesSeqPredictionDataset_middle_frames(
         os.path.join(args.test_labels_dir, "Test2-labels.txt"),
         dataset_root,
         transform=transform_test,
         seq_len=1,
-        seed= seed if seed != -1 else None
+        seed=seed if seed != -1 else None,
     )
     face_frames_dataset_test3 = FaceFramesSeqPredictionDataset_middle_frames(
         os.path.join(args.test_labels_dir, "Test3-labels.txt"),
         dataset_root,
         transform=transform_test,
         seq_len=1,
-       seed= seed if seed != -1 else None
+        seed=seed if seed != -1 else None,
     )
 
     print("splitting dataset")
-    train_ds, val_ds = train_val_split(face_frames_dataset)
+    train_ds, val_ds = train_val_split(
+        face_frames_dataset,
+        train_prop=(1 - args.val_split),
+        val_prop=args.val_split,
+        seed=seed if seed != -1 else None,
+    )
 
     print("first 5 train labels")
     for i in range(5):
@@ -565,7 +588,10 @@ if __name__ == "__main__":
 
     # convnext_xlarge_384_in22ft1k
     model = Swin(
-         model_name="swin_large_patch4_window12_384", dropout=args.dropout, loss=args.loss,lr=args.lr
+        model_name="swin_large_patch4_window12_384",
+        dropout=args.dropout,
+        loss=args.loss,
+        lr=args.lr,
     )
 
     wandb_logger.watch(model, log="all", log_freq=100)
@@ -579,8 +605,6 @@ if __name__ == "__main__":
     wandb_logger.log_hyperparams({"accumulate_grad_batches": accumulate_grad_batches})
     # devices
     wandb_logger.log_hyperparams({"devices": args.devices})
-
-
 
     wandb_run_id = str(wandb_logger.version)
     if wandb_run_id == "None":
@@ -646,49 +670,48 @@ if __name__ == "__main__":
         torch.save(model.state_dict(), os.path.join(model_path, f"{wandb_run_id}.pt"))
         print(f"finished training, saved model to {model_path}")
 
-        #PREDICTIONS
+        # PREDICTIONS
         model.eval()  # set the model to evaluation mode
 
-        model = model.to('cuda:0')
+        model = model.to("cuda:0")
 
-        stages = ['1','2','3']
-        #get wandb run id
+        stages = ["1", "2", "3"]
+        # get wandb run id
 
-        resultsdir = os.path.join('./results/', wandb_run_id)
+        resultsdir = os.path.join("./results/", wandb_run_id)
         if not os.path.exists(resultsdir):
             os.makedirs(resultsdir)
 
-
-        scores=[]
+        scores = []
 
         for stage in stages:
-            name='test_set'+stage+'.txt'
+            name = "test_set" + stage + ".txt"
             test_labels = []
             test_names = []
             test_gt = []
 
-            #use seq len
+            # use seq len
 
             ds = FaceFramesSeqPredictionDataset_middle_frames(
-                os.path.join(args.test_labels_dir, "Test"+stage+"-labels.txt"),
+                os.path.join(args.test_labels_dir, "Test" + stage + "-labels.txt"),
                 dataset_root,
                 transform=transform_test,
                 seq_len=1,
-                seed= seed if seed != -1 else None
+                seed=seed if seed != -1 else None,
             )
             print(f"loaded {len(ds)} test examples")
 
             with torch.no_grad():
-                for x,gt,nameee in ds:
+                for x, gt, nameee in ds:
                     x = x.unsqueeze(0).to(model.device)
                     y = model(x)
                     y = y.cpu().numpy()
-                    y =y[0][0]
+                    y = y[0][0]
                     test_gt.append(gt)
                     test_labels.append(y)
                     test_names.append(nameee)
 
-            #compute score for test set
+            # compute score for test set
             test_labels = torch.tensor(test_labels).to(model.device)
             test_gt = torch.tensor(test_gt).to(model.device)
             test_names = np.array(test_names)
@@ -703,7 +726,7 @@ if __name__ == "__main__":
             print(f"test_set{stage}_spearman: {spearman}")
             print(f"test_set{stage}_rmse: {rmse}")
 
-            #save to wandb
+            # save to wandb
             wandb.log({f"final_test_set{stage}_plcc": plcc})
             wandb.log({f"final_test_set{stage}_spearman": spearman})
             wandb.log({f"final_test_set{stage}_rmse": rmse})
@@ -711,23 +734,24 @@ if __name__ == "__main__":
 
             scores.append((plcc + spearman) / 2)
 
-
-
             print(f"predicted {len(test_labels)} labels for {name}")
-            print(f'len test_names {len(test_names)}')
-            print(f'len test_labels {len(test_labels)}')
+            print(f"len test_names {len(test_names)}")
+            print(f"len test_labels {len(test_labels)}")
 
-            #save to file with  Test1_preds.txt, Test2_preds.txt, Test3_preds.txt
-            #name, label
-            with open(os.path.join(resultsdir, 'Test'+stage+'_preds.txt'), 'w') as f:
+            # save to file with  Test1_preds.txt, Test2_preds.txt, Test3_preds.txt
+            # name, label
+            with open(
+                os.path.join(resultsdir, "Test" + stage + "_preds.txt"), "w"
+            ) as f:
                 for i in range(len(test_names)):
                     f.write(f"{test_names[i]},{test_labels[i]}\n")
 
-            print(f"saved {len(test_labels)} predictions to {os.path.join(resultsdir, 'Test'+stage+'_preds.txt')}")
+            print(
+                f"saved {len(test_labels)} predictions to {os.path.join(resultsdir, 'Test'+stage+'_preds.txt')}"
+            )
 
         print(f"final_score: {sum(scores)/3}")
-        wandb.log({"final_final_score": sum(scores)/3})
-
+        wandb.log({"final_final_score": sum(scores) / 3})
 
         print("done")
 
