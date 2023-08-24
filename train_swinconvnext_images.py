@@ -43,7 +43,7 @@ import numpy as np
 from lightning.pytorch import seed_everything
 from torchvision import transforms
 import torch.nn as nn
-
+import yaml
 def train_val_split(dataset, train_prop=0.8, val_prop=0.2, seed=None):
     assert (
         0 <= train_prop <= 1 and 0 <= val_prop <= 1
@@ -62,6 +62,58 @@ def train_val_split(dataset, train_prop=0.8, val_prop=0.2, seed=None):
         )
     else:
         return random_split(dataset, [train_length, val_length])
+
+
+class HybridEmbed(nn.Module):
+    """ CNN Feature Map Embedding
+    Extract feature map from CNN, flatten, project to embedding dim.
+    """
+    def __init__(self, backbone, img_size=224, patch_size=1, feature_size=None, in_chans=3, embed_dim=768):
+        super().__init__()
+        assert isinstance(backbone, nn.Module)
+        img_size = (img_size, img_size)
+        patch_size = (patch_size, patch_size)
+        self.img_size = img_size
+        self.patch_size = patch_size
+        self.backbone = backbone
+        if feature_size is None:
+            with torch.no_grad():
+                # NOTE Most reliable way of determining output dims is to run forward pass
+                training = backbone.training
+                if training:
+                    backbone.eval()
+                o = self.backbone(torch.zeros(1, in_chans, img_size[0], img_size[1]))
+                if isinstance(o, (list, tuple)):
+                    o = o[-1]  # last feature if backbone outputs list/tuple of features
+                feature_size = o.shape[-2:]
+                feature_dim = o.shape[1]
+                backbone.train(training)
+        else:
+            feature_size = (feature_size, feature_size)
+            if hasattr(self.backbone, 'feature_info'):
+                feature_dim = self.backbone.feature_info.channels()[-1]
+            else:
+                feature_dim = self.backbone.num_features
+        assert feature_size[0] % patch_size[0] == 0 and feature_size[1] % patch_size[1] == 0
+        self.grid_size = (feature_size[0] // patch_size[0], feature_size[1] // patch_size[1])
+        self.num_patches = self.grid_size[0] * self.grid_size[1]
+        self.proj = nn.Conv2d(feature_dim, embed_dim, kernel_size=patch_size, stride=patch_size)
+
+    def forward(self, x):
+        x = self.backbone(x)
+        if isinstance(x, (list, tuple)):
+            x = x[-1]  # last feature if backbone outputs list/tuple of features
+        x = self.proj(x).flatten(2).transpose(1, 2)
+        return x
+
+def load_config():
+  with open('config.yaml') as file:
+    config= yaml.safe_load(file)
+
+  return config
+
+
+config = load_config()
 
 class Encoder(nn.Module):
 
@@ -142,71 +194,58 @@ class Decoder(nn.Module):
         x = self.unflatten(x)
         x = self.features(x)
         return x
-
-
-class HybridEmbed(nn.Module):
-    """ CNN Feature Map Embedding
-    Extract feature map from CNN, flatten, project to embedding dim.
-    """
-    def __init__(self, backbone, img_size=224, patch_size=1, feature_size=None, in_chans=3, embed_dim=768):
-        super().__init__()
-        assert isinstance(backbone, nn.Module)
-        img_size = (img_size, img_size)
-        patch_size = (patch_size, patch_size)
-        self.img_size = img_size
-        self.patch_size = patch_size
-        self.backbone = backbone
-        if feature_size is None:
-            with torch.no_grad():
-                # NOTE Most reliable way of determining output dims is to run forward pass
-                training = backbone.training
-                if training:
-                    backbone.eval()
-                o = self.backbone(torch.zeros(1, in_chans, img_size[0], img_size[1]))
-                if isinstance(o, (list, tuple)):
-                    o = o[-1]  # last feature if backbone outputs list/tuple of features
-                feature_size = o.shape[-2:]
-                feature_dim = o.shape[1]
-                backbone.train(training)
-        else:
-            feature_size = (feature_size, feature_size)
-            if hasattr(self.backbone, 'feature_info'):
-                feature_dim = self.backbone.feature_info.channels()[-1]
-            else:
-                feature_dim = self.backbone.num_features
-        assert feature_size[0] % patch_size[0] == 0 and feature_size[1] % patch_size[1] == 0
-        self.grid_size = (feature_size[0] // patch_size[0], feature_size[1] // patch_size[1])
-        self.num_patches = self.grid_size[0] * self.grid_size[1]
-        self.proj = nn.Conv2d(feature_dim, embed_dim, kernel_size=patch_size, stride=patch_size)
+        
+class GenConViTVAE(nn.Module):
+    def __init__(self, config, pretrained=True):
+        super(GenConViTVAE, self).__init__()
+        self.latent_dims = config['model']['latent_dims']
+        self.encoder = Encoder(self.latent_dims)
+        self.decoder = Decoder(self.latent_dims)
+        self.embedder = create_model(config['model']['embedder'], pretrained=True)
+        self.convnext_backbone = create_model(config['model']['backbone'], pretrained=True, num_classes=1000, drop_path_rate=0, head_init_scale=1.0)
+        self.convnext_backbone.patch_embed = HybridEmbed(self.embedder, img_size=config['img_size'], embed_dim=768)
+        self.num_feature = self.convnext_backbone.head.fc.out_features * 2
+ 
+        self.fc = nn.Linear(self.num_feature, self.num_feature//4)
+        self.fc3 = nn.Linear(self.num_feature//2, self.num_feature//4)
+        self.fc2 = nn.Linear(self.num_feature//4, config['num_classes'])
+        self.relu = nn.ReLU()
+        self.resize = transforms.Resize((224,224), antialias=True)
 
     def forward(self, x):
-        x = self.backbone(x)
-        if isinstance(x, (list, tuple)):
-            x = x[-1]  # last feature if backbone outputs list/tuple of features
-        x = self.proj(x).flatten(2).transpose(1, 2)
-        return x
+        z = self.encoder(x)
+        x_hat = self.decoder(z)
 
-
+        x1 = self.convnext_backbone(x)
+        x2 = self.convnext_backbone(x_hat)
+        x = torch.cat((x1,x2), dim=1)
+        x = self.fc2(self.relu(self.fc(self.relu(x))))
+        
+        return x, self.resize(x_hat)
 
 class ConvNeXt(pl.LightningModule):
     def __init__(self, og_path, model_name="convnext_xlarge_384_in22ft1k",model2_name="swin_large_patch4_window12_384",
      dropout=0.1, loss="rmse", lr=2e-5):
         super(ConvNeXt, self).__init__()
 
-        self.latent_dims = 12544
-        self.encoder = Encoder(self.latent_dims)
-        self.decoder = Decoder(self.latent_dims)
-        self.embedder = create_model("swin_tiny_patch4_window7_224", pretrained=True)
-        self.convnext_backbone = create_model("convnext_tiny", pretrained=True, num_classes=1000, drop_path_rate=0, head_init_scale=1.0)
-        self.convnext_backbone.patch_embed = HybridEmbed(self.embedder, img_size=224, embed_dim=768)
-        self.num_feature = self.convnext_backbone.head.fc.out_features * 2
+        self.backbone = GenConViTVAE(load_config())
+        #load from cp 
+        self.backbone.load_state_dict(torch.load(og_path))
+
+        # self.latent_dims = 12544
+        # self.encoder = Encoder(self.latent_dims)
+        # self.decoder = Decoder(self.latent_dims)
+        # self.embedder = create_model("swin_tiny_patch4_window7_224", pretrained=True)
+        # self.convnext_backbone = create_model("convnext_tiny", pretrained=True, num_classes=1000, drop_path_rate=0, head_init_scale=1.0)
+        # self.convnext_backbone.patch_embed = HybridEmbed(self.embedder, img_size=224, embed_dim=768)
+        # self.num_feature = self.convnext_backbone.head.fc.out_features * 2
  
-        self.fc = nn.Linear(self.num_feature, self.num_feature//4)
-        self.fc3 = nn.Linear(self.num_feature//2, self.num_feature//4)
-        self.fc2 = nn.Linear(self.num_feature//4,  2)
+        # self.fc = nn.Linear(self.num_feature, self.num_feature//4)
+        # self.fc3 = nn.Linear(self.num_feature//2, self.num_feature//4)
+        # self.fc2 = nn.Linear(self.num_feature//4,  2)
         self.fc4 = nn.Linear(2, 1) # i added this
-        self.relu = nn.ReLU()
-        self.resize = transforms.Resize((224,224), antialias=True)
+        # self.relu = nn.ReLU()
+        # self.resize = transforms.Resize((224,224), antialias=True)
         
         # self.backbone = create_model(model_name, pretrained=True, num_classes=2)
         # # load from checkpoint
@@ -298,21 +337,26 @@ class ConvNeXt(pl.LightningModule):
         # Select a random frame for each item in the batch
         x_random_frame = x[torch.arange(x.shape[0]), random_idx]
 
-        # Process the selected frame through the encoder
-        z = self.encoder(x_random_frame)
+        # # Process the selected frame through the encoder
+        # z = self.encoder(x_random_frame)
 
-        # Reconstruct the selected frame through the decoder
-        x_hat = self.decoder(z)
+        # # Reconstruct the selected frame through the decoder
+        # x_hat = self.decoder(z)
 
-        # Process both the original and reconstructed frames through the backbone
-        x1 = self.convnext_backbone(x_random_frame)
-        x2 = self.convnext_backbone(x_hat)
+        # # Process both the original and reconstructed frames through the backbone
+        # x1 = self.convnext_backbone(x_random_frame)
+        # x2 = self.convnext_backbone(x_hat)
 
-        # Concatenate the features and apply further processing
-        x = torch.cat((x1, x2), dim=1)
-        x = self.fc4(self.fc2(self.relu(self.fc(self.relu(x)))))
+        # # Concatenate the features and apply further processing
+        # x = torch.cat((x1, x2), dim=1)
+        # x = self.fc4(self.fc2(self.relu(self.fc(self.relu(x)))))
 
+        x,x_hat=self.backbone(x_random_frame)
+        x = self.fc4(x)
         return x #, self.resize(x_hat) dont return decoded image
+
+
+        # return x #, self.resize(x_hat) dont return decoded image
 
 
     def training_step(self, batch, batch_idx):
@@ -728,23 +772,23 @@ if __name__ == "__main__":
     model = ConvNeXt(
         og_path, model_name="convnext_xlarge_384_in22ft1k", dropout=args.dropout, loss=args.loss,lr=args.lr
     )
-    cp = state_dict = torch.load(og_path)
-    checkpoint_keys = set(cp.keys())
-    model_keys = set(model.state_dict().keys())
+    # cp = state_dict = torch.load(og_path)
+    # checkpoint_keys = set(cp.keys())
+    # model_keys = set(model.state_dict().keys())
 
-    # Find the missing and unexpected keys
-    missing_keys = model_keys - checkpoint_keys
-    unexpected_keys = checkpoint_keys - model_keys
+    # # Find the missing and unexpected keys
+    # missing_keys = model_keys - checkpoint_keys
+    # unexpected_keys = checkpoint_keys - model_keys
 
-    # Log the missing and unexpected keys
-    if missing_keys:
-        print(f"Missing keys in checkpoint: {missing_keys}")
-    if unexpected_keys:
-        print(f"Unexpected keys in checkpoint: {unexpected_keys}")
+    # # Log the missing and unexpected keys
+    # if missing_keys:
+    #     print(f"Missing keys in checkpoint: {missing_keys}")
+    # if unexpected_keys:
+    #     print(f"Unexpected keys in checkpoint: {unexpected_keys}")
 
 
    
-    model.load_state_dict(cp, strict=False)
+    # model.load_state_dict(cp, strict=False)
 
     if args.from_cp_id != "None":
         checkpoint_path = os.path.join(final_model_save_dir,args.from_cp_id,f"{args.from_cp_id}.pt")
