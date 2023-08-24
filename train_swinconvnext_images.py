@@ -728,7 +728,7 @@ if __name__ == "__main__":
     model = ConvNeXt(
         og_path, model_name="convnext_xlarge_384_in22ft1k", dropout=args.dropout, loss=args.loss,lr=args.lr
     )
-
+    cp = state_dict = torch.load(og_path)
     checkpoint_keys = set(cp.keys())
     model_keys = set(model.state_dict().keys())
 
@@ -743,7 +743,7 @@ if __name__ == "__main__":
         print(f"Unexpected keys in checkpoint: {unexpected_keys}")
 
 
-    cp = state_dict = torch.load(og_path)
+   
     model.load_state_dict(cp, strict=False)
 
     if args.from_cp_id != "None":
