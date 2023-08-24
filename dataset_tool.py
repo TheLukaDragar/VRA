@@ -47,11 +47,11 @@ def build_transforms(height, width, max_pixel_value=255.0, norm_mean=[0.485, 0.4
         ToTensorV2(),
     ])
     else:
-         train_transform = A.Compose([
-         A.HorizontalFlip(),
-         A.CoarseDropout(max_holes=2, max_height=80, max_width=80, p=augment_prob), #random erasing
-         A.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1, p=augment_prob), # Random color adjustment
-         A.RandomContrast(limit=0.2, p=augment_prob), # Random contrast adjustment
+        train_transform = A.Compose([
+        A.HorizontalFlip(),
+        A.CoarseDropout(max_holes=2, max_height=80, max_width=80, p=augment_prob), #random erasing
+        A.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1, p=augment_prob), # Random color adjustment
+        A.RandomContrast(limit=0.2, p=augment_prob), # Random contrast adjustment
         # A.GaussNoise(p=0.1),
         # A.GaussianBlur(p=0.1),
         A.Resize(height, width),
