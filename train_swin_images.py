@@ -64,7 +64,7 @@ def train_val_split(dataset, train_prop=0.8, val_prop=0.2, seed=None):
 
 
 class Swin(pl.LightningModule):
-    def __init__(self, og_path, model_name="swin_large_patch4_window12_384", dropout=0.1, loss="rmse", lr=2e-5):
+    def __init__(self, model_name="swin_large_patch4_window12_384", dropout=0.1, loss="rmse", lr=2e-5):
         super(Swin, self).__init__()
         self.model_name = model_name
         self.backbone = create_model(self.model_name, pretrained=True, num_classes=2)
@@ -74,7 +74,7 @@ class Swin(pl.LightningModule):
         n_features = self.backbone.head.fc.in_features
         self.backbone.head.fc = nn.Linear(n_features, 2)
         self.backbone = torch.nn.DataParallel(self.backbone)
-        self.backbone.load_state_dict(torch.load(og_path))
+        # self.backbone.load_state_dict(torch.load(og_path))
 
         self.backbone = self.backbone.module
         self.backbone.head.fc = nn.Identity()
@@ -345,11 +345,11 @@ if __name__ == "__main__":
         default="./competition_end_groundtruth/",
         help="Path to the test labels directory.",
     )
-    parser.add_argument(
-        "--og_checkpoint",
-        default="./borut_models/swin_large_patch4_window12_384_in22k_40.pth",
-        help="Path to the original checkpoint.",
-    )
+    # parser.add_argument(
+    #     "--og_checkpoint",
+    #     default="./borut_models/swin_large_patch4_window12_384_in22k_40.pth",
+    #     help="Path to the original checkpoint.",
+    # )
     # parser.add_argument('--cp_save_dir', default='/d/hpc/projects/FRI/ldragar/checkpoints/', help='Path to save checkpoints.')
     parser.add_argument(
         "--final_model_save_dir",
@@ -387,7 +387,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_nodes", type=int, default=1, help="Number of nodes.")
     # devices array
     parser.add_argument(
-        "--devices", nargs="+", type=int, default=[0, 1], help="Devices to train on."
+        "--devices", nargs="+", type=int, default=[0, 1,2,3], help="Devices to train on."
     )
     # drop out
     parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate.")
