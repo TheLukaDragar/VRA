@@ -64,10 +64,10 @@ def train_val_split(dataset, train_prop=0.8, val_prop=0.2, seed=None):
 
 
 class ConvNeXt(pl.LightningModule):
-    def __init__(self, og_path, model_name="convnext_tiny", dropout=0.1, loss="rmse", lr=2e-5):
+    def __init__(self, og_path, model_name="convnext_tiny", dropout=0.1, loss="rmse", lr=2e-5,drop_path_rate=0.0):
         super(ConvNeXt, self).__init__()
         self.model_name = model_name
-        self.backbone = create_model(self.model_name, pretrained=True, num_classes=2)
+        self.backbone = create_model(self.model_name, pretrained=True, num_classes=2, drop_path_rate=drop_path_rate)
         # load from checkpoint
         # self.backbone.load_state_dict(torch.load('/d/hpc/projects/FRI/ldragar/convnext_xlarge_384_in22ft1k_10.pth'))
 
@@ -420,6 +420,10 @@ if __name__ == "__main__":
         default="None",
         help="Resume training from checkpoint id.",
     )
+    #augment_prob
+    parser.add_argument('--augment_prob', type=float, default=0.5, help='Augmentation probability.')
+    #drop_path_rate
+    parser.add_argument('--drop_path_rate', type=float, default=0.0, help='Drop path rate.')
 
 
     # parser.add_argument('--test_labels_dir', default='/d/hpc/projects/FRI/ldragar/label/', help='Path to the test labels directory.')
@@ -453,6 +457,7 @@ if __name__ == "__main__":
         norm_mean=[0.485, 0.456, 0.406],
         norm_std=[0.229, 0.224, 0.225],
         augment=args.augmentation,
+        augment_prob=args.augment_prob
     )
 
     print("loading dataset")
@@ -578,7 +583,7 @@ if __name__ == "__main__":
 
     # convnext_xlarge_384_in22ft1k
     model = ConvNeXt(
-        og_path, model_name="convnext_xlarge_384_in22ft1k", dropout=args.dropout, loss=args.loss,lr=args.lr
+        og_path, model_name="convnext_xlarge_384_in22ft1k", dropout=args.dropout, loss=args.loss,lr=args.lr,drop_path_rate=args.drop_path_rate
     )
 
     if args.from_cp_id != "None":

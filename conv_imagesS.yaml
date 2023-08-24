@@ -80,6 +80,21 @@ parameters:
 
     distribution: categorical
 
+  augment_prob:
+    values:
+      - 0.5
+      - 0.9
+    distribution: categorical
+
+  drop_path_rate:
+    values:
+      - 0.0
+      - 0.1
+      - 0.2
+
+
+    distribution: categorical
+
   val_split:
     values:
       - 0.1
@@ -87,8 +102,7 @@ parameters:
   
   seed:
     values:
-      - 11
-      - 26
+      - 420
       - -1
     distribution: categorical
 
@@ -97,6 +111,9 @@ parameters:
       - "./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth"
       - "./borut_models/convnext_xlarge_384_in22ft1k_30.pth"
     distribution: categorical
+
+
+  
   
 
 
