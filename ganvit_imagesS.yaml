@@ -1,0 +1,98 @@
+project: luka_vra
+name: vega_ganvit_images1
+program: train_ganvit_images.py
+
+
+command:
+  - ${env}
+  # - echo
+  - srun
+  - "--nodes=1"
+  - "--cpus-per-task=12"
+  - "--gpus=4"
+  - "-p gpu"
+  - "--ntasks-per-node=4"
+  - "--exclusive"
+  - python3
+  - ${program}
+  - ${args}
+  - "--devices"
+  - "0"
+  - "1"
+  - "2"
+  - "3"
+
+
+
+method: random
+metric:
+  goal: minimize
+  name: val_loss
+
+parameters:
+  # model_name:
+  #   values:
+  #     - convnext_xlarge_384_in22ft1k
+  #   distribution: categorical
+  batch_size:
+    values:
+      - 1
+      - 2
+      - 4
+    distribution: categorical
+    
+    
+  seq_len:
+    values:
+      - 4
+      - 10
+
+
+    distribution: categorical
+
+  accumulate_grad_batches:
+    values:
+      - 1
+      - 2
+    distribution: categorical
+
+  max_epochs:
+    values:
+      - 16
+      - 32
+      - 44
+    distribution: categorical
+
+  loss:
+    values:
+      - "rmse"
+      - "mae"
+    distribution: categorical
+
+  augmentation:
+    values:
+      - True
+      - False
+
+    distribution: categorical
+
+  val_split:
+    values:
+      - 0.1
+    distribution: categorical
+  
+  seed:
+    values:
+      - -1
+    distribution: categorical
+
+
+  # devices:
+  #   value:
+  #     - [0,1,2,3]
+  #   distribution: constant
+
+  # dataset_root:
+  #   value:
+  #     - "/ceph/hpc/data/st2207-pgp-users/ldragar/dataset/"
+  #   distribution: constant
