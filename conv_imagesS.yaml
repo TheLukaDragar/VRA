@@ -24,7 +24,7 @@ command:
 
 
 
-method: bayes
+method: random
 metric:
   goal: minimize
   name: val_loss
@@ -52,7 +52,6 @@ parameters:
   accumulate_grad_batches:
     values:
       - 1
-      - 2
     distribution: categorical
 
   dropout:

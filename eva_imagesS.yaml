@@ -45,7 +45,6 @@ parameters:
       - 4
       - 10
       - 16
-      - 24
 
     distribution: categorical
 
@@ -62,7 +61,6 @@ parameters:
 
   max_epochs:
     values:
-      - 8
       - 16
       - 32
     distribution: categorical
@@ -86,23 +84,26 @@ parameters:
       - 0.9
     distribution: categorical
 
-  val_split:
-    values:
-      - 0.1
-    distribution: categorical
-
   drop_path_rate:
     values:
       - 0.0
       - 0.1
       - 0.2
+
+
+    distribution: categorical
+
+  val_split:
+    values:
+      - 0.1
+    distribution: categorical
   
   seed:
     values:
       - 420
       - -1
     distribution: categorical
-  
+
 
    
 

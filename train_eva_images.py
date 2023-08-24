@@ -639,26 +639,26 @@ if __name__ == "__main__":
     # Test the model
     print("testing current model")
 
-    model.current_test_set = "test_set1"
-    trainer.test(model, test_dl1)
-    model.current_test_set = "test_set2"
-    trainer.test(model, test_dl2)
-    model.current_test_set = "test_set3"
-    trainer.test(model, test_dl3)
+    # model.current_test_set = "test_set1"
+    # trainer.test(model, test_dl1)
+    # model.current_test_set = "test_set2"
+    # trainer.test(model, test_dl2)
+    # model.current_test_set = "test_set3"
+    # trainer.test(model, test_dl3)
 
     if trainer.global_rank == 0:
-        test_set1_score = wandb_logger.experiment.summary["test_set1_score"]
-        test_set2_score = wandb_logger.experiment.summary["test_set2_score"]
-        test_set3_score = wandb_logger.experiment.summary["test_set3_score"]
-        avg_score = (test_set1_score + test_set2_score + test_set3_score) / 3
-        print(f"test_set1_score: {test_set1_score}")
-        print(f"test_set2_score: {test_set2_score}")
-        print(f"test_set3_score: {test_set3_score}")
-        print(f"final_score: {avg_score}")
+        # test_set1_score = wandb_logger.experiment.summary["test_set1_score"]
+        # test_set2_score = wandb_logger.experiment.summary["test_set2_score"]
+        # test_set3_score = wandb_logger.experiment.summary["test_set3_score"]
+        # avg_score = (test_set1_score + test_set2_score + test_set3_score) / 3
+        # print(f"test_set1_score: {test_set1_score}")
+        # print(f"test_set2_score: {test_set2_score}")
+        # print(f"test_set3_score: {test_set3_score}")
+        # print(f"final_score: {avg_score}")
 
-        # Log the average score to WandB
-        wandb.log({"final_score": avg_score})
-        # save model
+        # # Log the average score to WandB
+        # wandb.log({"final_score": avg_score})
+        # # save model
         model_path = os.path.join(final_model_save_dir, wandb_run_id)
         if not os.path.exists(model_path):
             os.makedirs(model_path)
