@@ -595,8 +595,8 @@ if __name__ == "__main__":
     # seed only data
 
     transform_train, transform_test = build_transforms(
-        384,
-        384,
+        224,
+        224,
         max_pixel_value=255.0,
         norm_mean=[0.485, 0.456, 0.406],
         norm_std=[0.229, 0.224, 0.225],
