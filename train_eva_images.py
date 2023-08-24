@@ -72,10 +72,11 @@ class Eva(pl.LightningModule):
         model_name="eva_large_patch14_336.in22k_ft_in22k_in1k",
         dropout=0.1,
         loss="rmse",
+        drop_path_rate=0.0
     ):
         super(Eva, self).__init__()
         self.model_name = model_name
-        self.backbone = create_model(self.model_name, pretrained=True, num_classes=0)
+        self.backbone = create_model(self.model_name, pretrained=True, num_classes=0,drop_path_rate=drop_path_rate)
 
         n_features = 1024
 
@@ -403,6 +404,10 @@ if __name__ == "__main__":
         default="None",
         help="Resume training from checkpoint id.",
     )
+    parser.add_argument('--augment_prob', type=float, default=0.5, help='Augmentation probability.')
+    #drop_path_rate
+    parser.add_argument('--drop_path_rate', type=float, default=0.0, help='Drop path rate.')
+
 
     # parser.add_argument('--test_labels_dir', default='/d/hpc/projects/FRI/ldragar/label/', help='Path to the test labels directory.')
 
@@ -434,6 +439,7 @@ if __name__ == "__main__":
         norm_mean=[0.485, 0.456, 0.406],
         norm_std=[0.229, 0.224, 0.225],
         augment=args.augmentation,
+        augment_prob=args.augment_prob,
     )
 
     print("loading dataset")
@@ -570,6 +576,7 @@ if __name__ == "__main__":
         model_name="eva_large_patch14_336.in22k_ft_in22k_in1k",
         dropout=args.dropout,
         loss=args.loss,
+        drop_path_rate=args.drop_path_rate
     )
     if args.from_cp_id != "None":
         checkpoint_path = os.path.join(final_model_save_dir,args.from_cp_id,f"{args.from_cp_id}.pt")
