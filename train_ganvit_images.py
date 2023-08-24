@@ -230,7 +230,7 @@ class ConvNeXt(pl.LightningModule):
 
         self.backbone = GenConViTVAE(load_config())
         #load from cp 
-        self.backbone.load_state_dict(torch.load(og_path))
+        #self.backbone.load_state_dict(torch.load(og_path))
 
         # self.latent_dims = 12544
         # self.encoder = Encoder(self.latent_dims)
