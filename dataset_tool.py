@@ -17,7 +17,7 @@ from PIL import Image
 
 
 def build_transforms(height, width, max_pixel_value=255.0, norm_mean=[0.485, 0.456, 0.406],
-                     norm_std=[0.229, 0.224, 0.225],augment=False,augment_prob=0.2 **kwargs):
+                     norm_std=[0.229, 0.224, 0.225],augment=False,augment_prob=0.2):
     """Builds train and test transform functions.
 
     Args:
