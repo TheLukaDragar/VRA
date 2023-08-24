@@ -148,7 +148,7 @@ class HybridEmbed(nn.Module):
     """ CNN Feature Map Embedding
     Extract feature map from CNN, flatten, project to embedding dim.
     """
-    def __init__(self, backbone, img_size=384, patch_size=1, feature_size=None, in_chans=3, embed_dim=768):
+    def __init__(self, backbone, img_size=224, patch_size=1, feature_size=None, in_chans=3, embed_dim=768):
         super().__init__()
         assert isinstance(backbone, nn.Module)
         img_size = (img_size, img_size)
