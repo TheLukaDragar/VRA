@@ -356,8 +356,8 @@ if __name__ == "__main__":
         default="./swin_models_images/",
         help="Path to save the final model.",
     )
-    parser.add_argument("--batch_size", type=int, default=2, help="Batch size.")
-    parser.add_argument("--seq_len", type=int, default=10, help="Sequence length.")
+    parser.add_argument("--batch_size", type=int, default=1, help="Batch size.")
+    parser.add_argument("--seq_len", type=int, default=12, help="Sequence length.")
     parser.add_argument(
         "--seed",
         type=int,
@@ -372,7 +372,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--accumulate_grad_batches",
         type=int,
-        default=8,
+        default=1,
         help="Accumulate gradients over n batches.",
     )
     # experiment_name
