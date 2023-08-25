@@ -64,7 +64,7 @@ def train_val_split(dataset, train_prop=0.8, val_prop=0.2, seed=None):
 
 
 class ConvNeXt(pl.LightningModule):
-    def __init__(self, og_path, model_name="convnext_tiny", dropout=0.1, loss="rmse", lr=2e-5,drop_path_rate=0.0):
+    def __init__(self, og_path, model_name="convnext_tiny", dropout=0.1, loss="rmse", lr=2e-5,drop_path_rate=0.0,weight_decay=0.01):
         super(ConvNeXt, self).__init__()
         self.model_name = model_name
         self.backbone = create_model(self.model_name, pretrained=True, num_classes=2, drop_path_rate=drop_path_rate)
@@ -105,6 +105,7 @@ class ConvNeXt(pl.LightningModule):
 
         self.loss_fn = None
         self.lr = lr
+        self.weight_decay = weight_decay
 
         if loss == "rmse":
             self.loss_fn = self.RMSE
@@ -262,7 +263,7 @@ class ConvNeXt(pl.LightningModule):
 
 
     def configure_optimizers(self):
-        optimizer = AdamW(self.parameters(), lr=self.lr)
+        optimizer = AdamW(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
         lr_scheduler = {
             "scheduler": ReduceLROnPlateau(
                 optimizer, mode="min", factor=0.1, patience=2, verbose=True
@@ -425,6 +426,10 @@ if __name__ == "__main__":
     #drop_path_rate
     parser.add_argument('--drop_path_rate', type=float, default=0.0, help='Drop path rate.')
 
+    #weight_decay
+    parser.add_argument('--weight_decay', type=float, default=0.01, help='Weight decay.')
+
+
 
     # parser.add_argument('--test_labels_dir', default='/d/hpc/projects/FRI/ldragar/label/', help='Path to the test labels directory.')
 
@@ -583,7 +588,8 @@ if __name__ == "__main__":
 
     # convnext_xlarge_384_in22ft1k
     model = ConvNeXt(
-        og_path, model_name="convnext_xlarge_384_in22ft1k", dropout=args.dropout, loss=args.loss,lr=args.lr,drop_path_rate=args.drop_path_rate
+        og_path, model_name="convnext_xlarge_384_in22ft1k", dropout=args.dropout, loss=args.loss,lr=args.lr,drop_path_rate=args.drop_path_rate,
+        weight_decay=args.weight_decay
     )
 
     if args.from_cp_id != "None":

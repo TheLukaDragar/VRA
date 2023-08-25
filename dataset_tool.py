@@ -828,7 +828,7 @@ class FaceFramesSeqPredictionDataset_all_frames(Dataset):
         return sequence, mos_label, name
 
     def __len__(self):
-        return 3
+        return len(self.video_dirs)
 
     
 
