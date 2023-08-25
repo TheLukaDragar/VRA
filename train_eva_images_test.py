@@ -343,7 +343,7 @@ if __name__ == "__main__":
     # parser.add_argument('--cp_save_dir', default='/d/hpc/projects/FRI/ldragar/checkpoints/', help='Path to save checkpoints.')
     parser.add_argument(
         "--final_model_save_dir",
-        default="./eva_models_images/",
+        default="./eva_models_images_new/",
         help="Path to save the final model.",
     )
     parser.add_argument("--batch_size", type=int, default=2, help="Batch size.")
