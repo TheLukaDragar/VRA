@@ -531,11 +531,11 @@ if __name__ == "__main__":
             dataset_root,
             transform=transform_test,max_frames=args.max_frames,
         )
-        # ds_lr = FaceFramesSeqPredictionDataset_all_frames(
-        #     os.path.join(test_labels_dir, name),
-        #     dataset_root,
-        #     transform=transform_test_LR,max_frames=args.max_frames,
-        # )
+        ds_lr = FaceFramesSeqPredictionDataset_all_frames(
+            os.path.join(test_labels_dir, name),
+            dataset_root,
+            transform=transform_test_LR,max_frames=args.max_frames,
+        )
 
         print(f"loaded {len(ds)} test examples")
 
@@ -558,13 +558,13 @@ if __name__ == "__main__":
             num_workers=4,
             pin_memory=True,
         )
-        # dl_lr = DataLoader(
-        #         ds_lr,
-        #     batch_size=1,
-        #     shuffle=False,
-        #     num_workers=4,
-        #     pin_memory=True,
-        # )
+        dl_lr = DataLoader(
+                ds_lr,
+            batch_size=1,
+            shuffle=False,
+            num_workers=4,
+            pin_memory=True,
+        )
 
 
         with torch.no_grad():
@@ -574,7 +574,7 @@ if __name__ == "__main__":
             with open(os.path.join(resultsdir, "frame_predictions_Test" + stage + "_preds.txt"),'w') as f:
             
                 
-                for (sequences, gt, name) in tqdm(dl, desc="Predicting test " + stage):
+                for (sequences, gt, name) , (sequences_lr, _, _) in tqdm(zip(dl, dl_lr),desc=f"Predicting {name}",total=len(dl)):
 
                     print(f"predicting {name}")
                     # print("sequences", sequences.shape)
@@ -587,19 +587,19 @@ if __name__ == "__main__":
                     # make a batch of size number of frames in the video
 
                     sequences = sequences.permute(1, 0, 2, 3, 4)
+                    sequences_lr = sequences_lr.permute(1, 0, 2, 3, 4)
 
 
-                    sequences_lr = torch.flip(sequences, [3])
+                    # sequences_lr = torch.flip(sequences, [3])
                     
                     print("sequences", sequences.shape)
 
                     sequences = sequences.to(model.device)
-                    sequences_lr = sequences_lr.to(model.device)
                     y = model(sequences)
                     y = y.cpu().numpy()
                     torch.cuda.empty_cache()  # Clear GPU cache
 
-
+                    sequences_lr = sequences_lr.to(model.device)
                     y_lr = model(sequences_lr)
                     y_lr = y_lr.cpu().numpy()
                     torch.cuda.empty_cache()  # Clear GPU cache
