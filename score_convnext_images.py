@@ -574,12 +574,12 @@ if __name__ == "__main__":
             with open(os.path.join(resultsdir, "frame_predictions_Test" + stage + "_preds.txt"),'w') as f:
             
                 
-                for sequences, gt, name in tqdm(dl, desc="Predicting test " + stage):
+                for (sequences, gt, name), (sequences_lr, _, _) in tqdm(zip(dl, dl_lr), desc="Predicting test " + stage):
 
                     print(f"predicting {name}")
                     # print("sequences", sequences.shape)
 
-                    sequences_lr, _, _ = next(iter(dl_lr))
+                    # sequences_lr, _, _ = next(iter(dl_lr))
 
                     predictions = []
 
@@ -697,7 +697,7 @@ if __name__ == "__main__":
         mean_test_labels2 = []
         for i in range(len(all_test_names)):
             mean_test_labels2.append((mean_test_labels[i]+mean_test_labels_lr[i])/2)
-            
+
 
         with open(os.path.join(resultsdir, "Test" + stage + "_preds.txt"), "w") as f:
             for i in range(len(all_test_names)):
