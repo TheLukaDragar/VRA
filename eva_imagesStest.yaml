@@ -1,0 +1,134 @@
+project: luka_vra
+name: vega_eva_images_test
+program: train_eva_images_test.py
+
+command:
+  - ${env}
+  # - echo
+  - srun
+  - "--nodes=1"
+  - "--cpus-per-task=12"
+  - "--gpus=4"
+  - "-p gpu"
+  - "--ntasks-per-node=4"
+  - "--exclusive"
+  - python3
+  - ${program}
+  - ${args}
+  - "--devices"
+  - "0"
+  - "1"
+  - "2"
+  - "3"
+
+
+method: random
+metric:
+  goal: minimize
+  name: val_loss
+
+parameters:
+  # model_name:
+  #   values:
+  #     - convnext_xlarge_384_in22ft1k
+  #   distribution: categorical
+  batch_size:
+    values:
+      - 1
+      - 8
+    distribution: categorical
+    
+    
+  seq_len:
+    values:
+      - 8
+      - 16
+      - 32
+
+    distribution: categorical
+
+  accumulate_grad_batches:
+    values:
+      - 1
+    distribution: categorical
+
+  dropout:
+    distribution: categorical
+    values:
+      - 0.1
+      - 0.5
+
+  max_epochs:
+    values:
+      - 16
+      - 32
+      - 48
+      - 64
+    distribution: categorical
+
+  loss:
+    values:
+      - "rmse"
+      - "mae"
+    distribution: categorical
+
+  augmentation:
+    values:
+      - True
+      - False
+
+    distribution: categorical
+
+  augment_prob:
+    values:
+      - 0.5
+      - 0.9
+    distribution: categorical
+
+  drop_path_rate:
+    values:
+      - 0.0
+      - 0.1
+      - 0.2
+
+
+    distribution: categorical
+
+  val_split:
+    values:
+      - 0.1
+    distribution: categorical
+
+  weight_decay:
+    values:
+      - 0.01
+      - 0.1
+      - 0.001
+    distribution: categorical
+  
+  seed:
+    values:
+      - -1
+      - 1126
+    distribution: categorical
+
+
+   
+
+  # og_checkpoint:
+  #   value:
+  #     - "./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth"
+  #   distribution: constant
+
+
+
+
+  # devices:
+  #   value:
+  #     - [0,1,2,3]
+  #   distribution: constant
+
+  # dataset_root:
+  #   value:
+  #     - "/ceph/hpc/data/st2207-pgp-users/ldragar/dataset/"
+  #   distribution: constant
