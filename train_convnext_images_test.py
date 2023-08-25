@@ -83,11 +83,9 @@ class ConvNeXt(pl.LightningModule):
 
         # one frame feature vector
         self.fc = nn.Linear(n_features, 512)
-        self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, 64)
-        #self.fc4 = nn.Linear(64, 1)
-        self.fc4 = nn.Linear(64, 40) # 40 classes for MOS scores
-        self.cross_entropy_loss = nn.CrossEntropyLoss()
+        self.fc2 = nn.Linear(512, 1)
+        # self.fc3 = nn.Linear(256, 64)
+        # self.fc4 = nn.Linear(64, 1)
         self.mse = nn.MSELoss()
         self.mae = nn.L1Loss()
 
@@ -163,18 +161,17 @@ class ConvNeXt(pl.LightningModule):
         # Optionally, you can continue with further processing as needed
         x = self.drop(features)
         x = torch.nn.functional.relu(self.fc(x))
-        x = torch.nn.functional.relu(self.fc2(x))
-        x = torch.nn.functional.relu(self.fc3(x))
-        x = self.fc4(x)
-        logits = x
+        # x = torch.nn.functional.relu(self.fc2(x))
+        # x = torch.nn.functional.relu(self.fc3(x))
+        x = self.fc2(x)
+        logit = x
 
-        return logits
+        return logit
 
     def training_step(self, batch, batch_idx):
         x, y = batch
         preds = self(x)
         loss = self.loss_fn(preds, y)
-        #get softmax 
         rmse_loss = self.RMSE(preds, y)
         self.log(
             "train_loss", loss.item(), on_epoch=True, prog_bar=True, sync_dist=True
@@ -230,16 +227,13 @@ class ConvNeXt(pl.LightningModule):
         return loss
        
 
-    def kl_div_loss(self, preds, target):
-    # Applying softmax to the predictions to get probabilities
-        preds_softmax = torch.nn.functional.softmax(preds, dim=1)
-        
-        # Creating a one-hot encoded matrix for target
-        target_one_hot = torch.nn.functional.one_hot(target, num_classes=40).float()
-        
-        # Calculating KL divergence
-        loss = torch.nn.functional.kl_div(torch.log(preds_softmax), target_one_hot, reduction='batchmean')
-        
+    def kl_div_loss(self, preds, target, eps=1e-8):
+        preds_softmax = torch.nn.functional.softmax(preds, dim=-1)
+        target_softmax = torch.nn.functional.softmax(target, dim=-1)
+        loss = torch.sum(
+            target_softmax * torch.log((target_softmax + eps) / (preds_softmax + eps)), dim=-1
+        )
+        loss = torch.mean(loss)
         return loss
 
 
@@ -363,7 +357,7 @@ if __name__ == "__main__":
         default="./convnext_models_images/",
         help="Path to save the final model.",
     )
-    parser.add_argument("--batch_size", type=int, default=2, help="Batch size.")
+    parser.add_argument("--batch_size", type=int, default=1, help="Batch size.")
     parser.add_argument("--seq_len", type=int, default=10, help="Sequence length.")
     parser.add_argument(
         "--seed",
@@ -379,7 +373,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--accumulate_grad_batches",
         type=int,
-        default=8,
+        default=1,
         help="Accumulate gradients over n batches.",
     )
     # experiment_name
