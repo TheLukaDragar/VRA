@@ -405,6 +405,15 @@ if __name__ == "__main__":
         norm_mean=[0.485, 0.456, 0.406],
         norm_std=[0.229, 0.224, 0.225],
     )
+    _, transform_test_LR = build_transforms(
+        384,
+        384,
+        max_pixel_value=255.0,
+        norm_mean=[0.485, 0.456, 0.406],
+        norm_std=[0.229, 0.224, 0.225],
+        test_lr_flip=True,
+    )
+
 
     model = ConvNeXt(
         og_path, model_name="convnext_xlarge_384_in22ft1k", dropout=0.1, loss="rmse"
@@ -495,10 +504,13 @@ if __name__ == "__main__":
 
         # Initialize lists to store the predictions and the test names
         all_test_labels = []
+        all_test_labels_lr = []
         all_test_names = []
         all_test_gt = []
         all_test_std = []
+        all_test_std_lr = []
         min_test_frames_scores = []
+
 
         # # Make x_predictions for each stage
         # for i in range(x_predictions):
@@ -519,6 +531,12 @@ if __name__ == "__main__":
             dataset_root,
             transform=transform_test,max_frames=args.max_frames,
         )
+        ds_lr = FaceFramesSeqPredictionDataset_all_frames(
+            os.path.join(test_labels_dir, name),
+            dataset_root,
+            transform=transform_test_LR,max_frames=args.max_frames,
+        )
+
         print(f"loaded {len(ds)} test examples")
 
             # with torch.no_grad():
@@ -540,6 +558,14 @@ if __name__ == "__main__":
             num_workers=4,
             pin_memory=True,
         )
+        dl_lr = DataLoader(
+                ds_lr,
+            batch_size=1,
+            shuffle=False,
+            num_workers=4,
+            pin_memory=True,
+        )
+
 
         with torch.no_grad():
 
@@ -553,29 +579,40 @@ if __name__ == "__main__":
                     print(f"predicting {name}")
                     # print("sequences", sequences.shape)
 
+                    sequences_lr, _, _ = next(iter(dl_lr))
+
                     predictions = []
 
                     # make predictions for each frame in the video
                     # make a batch of size number of frames in the video
 
                     sequences = sequences.permute(1, 0, 2, 3, 4)
+                    sequences_lr = sequences_lr.permute(1, 0, 2, 3, 4)
+                    
                     print("sequences", sequences.shape)
 
                     sequences = sequences.to(model.device)
+                    sequences_lr = sequences_lr.to(model.device)
                     y = model(sequences)
                     y = y.cpu().numpy()
+
+                    y_lr = model(sequences_lr)
+                    y_lr = y_lr.cpu().numpy()
+
                     
                     #print("y", y)
                     # print("y shape", y.shape)
                     # remove batch dim
 
                     y = y.squeeze(1)
+                    y_lr = y_lr.squeeze(1)
                     
                     # print(
                     #     "y", y
                     # )  # y is now a list of predictions for each frame in the video
 
                     predictions = y
+                    predictions_lr = y_lr
                     
                     # print(predictions.shape)
                     # Perform prediction on each frame in the video
@@ -593,6 +630,9 @@ if __name__ == "__main__":
                     # Compute mean and standard deviation of predictions
                     mean_prediction = np.mean(predictions)
                     std_prediction = np.std(predictions)
+                    mean_prediction_lr = np.mean(predictions_lr)
+                    std_prediction_lr = np.std(predictions_lr)
+
                     # print("score:",mean_prediction)
                     # print("std:",std_prediction)
                     # test_labels.append(mean_prediction)
@@ -605,9 +645,11 @@ if __name__ == "__main__":
 
 
                     all_test_labels.append(mean_prediction.item())
+                    all_test_labels_lr.append(mean_prediction_lr.item())
                     all_test_names.append(name[0])
                     all_test_gt.append(gt.item())
                     all_test_std.append(std_prediction.item())
+                    all_test_std_lr.append(std_prediction_lr.item())
                     min_test_frames_scores.append(min(predictions))
 
                     f.write(f"{name[0]},{ ','.join([str(x) for x in predictions]) }\n")
@@ -621,6 +663,7 @@ if __name__ == "__main__":
         # # Calculate the mean and standard deviation of the predictions
         # all_test_labels = np.array(all_test_labels)
         mean_test_labels = all_test_labels
+        mean_test_labels_lr = all_test_labels_lr
         # mean_test_labels = np.mean(all_test_labels, axis=0)
         # std_test_labels = np.std(all_test_labels, axis=0)
         # std_beetwen_frames = np.mean(all_test_std, axis=0)
@@ -641,9 +684,25 @@ if __name__ == "__main__":
         # print(f"RMSE between predictions: {rmse_list}")
 
         # Save the mean predictions to a file
-        with open(os.path.join(resultsdir, "Test" + stage + "_preds.txt"), "w") as f:
+        with open(os.path.join(resultsdir, "Test" + stage + "non_flip_preds.txt"), "w") as f:
             for i in range(len(all_test_names)):
                 f.write(f"{all_test_names[i]},{mean_test_labels[i]}\n")
+
+        with open(os.path.join(resultsdir, "Test" + stage + "flip_preds.txt"), "w") as f:
+            for i in range(len(all_test_names)):
+                f.write(f"{all_test_names[i]},{mean_test_labels_lr[i]}\n")
+
+
+        #combine predictions
+        mean_test_labels2 = []
+        for i in range(len(all_test_names)):
+            mean_test_labels2.append((mean_test_labels[i]+mean_test_labels_lr[i])/2)
+            
+
+        with open(os.path.join(resultsdir, "Test" + stage + "_preds.txt"), "w") as f:
+            for i in range(len(all_test_names)):
+                f.write(f"{all_test_names[i]},{mean_test_labels2[i]}\n")
+                
 
         # save std beetwen frames
         with open(
@@ -652,6 +711,15 @@ if __name__ == "__main__":
         ) as f:
             for i in range(len(all_test_names)):
                 f.write(f"{all_test_names[i]},{all_test_std[i]}\n")
+
+
+        with open(
+            os.path.join(resultsdir, "std_beetwen_frames_Test" + stage + "_preds_lr.txt"),
+            "w",
+        ) as f:
+            for i in range(len(all_test_names)):
+                f.write(f"{all_test_names[i]},{all_test_std_lr[i]}\n")
+
 
         # # save all predictions for each frame
         # with open(
@@ -673,15 +741,15 @@ if __name__ == "__main__":
                 f.write(f"{all_test_names[i]},{min_test_frames_scores[i]}\n")
 
         if stage == "1":
-            t1 = np.array(mean_test_labels)
+            t1 = np.array(mean_test_labels2)
             gt1 = np.array(mean_test_gt)
 
         if stage == "2":
-            t2 = np.array(mean_test_labels)
+            t2 = np.array(mean_test_labels2)
             gt2 = np.array(mean_test_gt)
 
         if stage == "3":
-            t3 = np.array(mean_test_labels)
+            t3 = np.array(mean_test_labels2)
             gt3 = np.array(mean_test_gt)
 
         print(

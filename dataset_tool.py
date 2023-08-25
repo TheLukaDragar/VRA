@@ -17,7 +17,7 @@ from PIL import Image
 
 
 def build_transforms(height, width, max_pixel_value=255.0, norm_mean=[0.485, 0.456, 0.406],
-                     norm_std=[0.229, 0.224, 0.225],augment=False,augment_prob=0.2):
+                     norm_std=[0.229, 0.224, 0.225],augment=False,augment_prob=0.2,test_lr_flip=False):
     """Builds train and test transform functions.
 
     Args:
@@ -49,8 +49,7 @@ def build_transforms(height, width, max_pixel_value=255.0, norm_mean=[0.485, 0.4
     else:
         
         train_transform = A.Compose([
-        A.HorizontalFlip(),
-       
+        A.HorizontalFlip(p=augment_prob),
         A.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1, p=augment_prob), # Random color adjustment
         A.RandomContrast(limit=0.2, p=augment_prob), # Random contrast adjustment
         # A.GaussNoise(p=0.1),
@@ -63,12 +62,20 @@ def build_transforms(height, width, max_pixel_value=255.0, norm_mean=[0.485, 0.4
     ])
 
 
-
-    test_transform = A.Compose([
+    if test_lr_flip:
+        test_transform = A.Compose([
         A.Resize(height, width),
+        A.HorizontalFlip(p=1.0),
         A.Normalize(mean=norm_mean, std=norm_std, max_pixel_value=max_pixel_value),
         ToTensorV2(),
     ])
+    else:
+        test_transform = A.Compose([
+            A.Resize(height, width),
+            A.Normalize(mean=norm_mean, std=norm_std, max_pixel_value=max_pixel_value),
+        
+            ToTensorV2(),
+        ])
 
     return train_transform, test_transform
 
@@ -821,7 +828,7 @@ class FaceFramesSeqPredictionDataset_all_frames(Dataset):
         return sequence, mos_label, name
 
     def __len__(self):
-        return len(self.video_dirs)
+        return 3
 
     
 
