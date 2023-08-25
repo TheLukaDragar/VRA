@@ -597,9 +597,13 @@ if __name__ == "__main__":
                     sequences_lr = sequences_lr.to(model.device)
                     y = model(sequences)
                     y = y.cpu().numpy()
+                    torch.cuda.empty_cache()  # Clear GPU cache
+
 
                     y_lr = model(sequences_lr)
                     y_lr = y_lr.cpu().numpy()
+                    torch.cuda.empty_cache()  # Clear GPU cache
+
 
                     
                     #print("y", y)
