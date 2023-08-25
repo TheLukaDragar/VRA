@@ -945,10 +945,10 @@ class VideoFramesPredictionDataset_3(Dataset):
         # with open(self.labels_file, 'r') as f:
         #     lines = [line.strip() for line in f]
 
-        self.video_files = os.listdir(video_dir)
-        self.names = [os.path.join(video_dir, line) for line in self.video_files]
+        self.names = os.listdir(video_dir)
+        self.video_files = [os.path.join(video_dir, line) for line in self.names]
 
-        print("Loaded {} video file".format(self.name))
+        print("Loaded {} videos file".format(self.names))
 
     def __getitem__(self, index):
         video_file = self.video_files[index]
@@ -956,6 +956,9 @@ class VideoFramesPredictionDataset_3(Dataset):
 
         cap = cv2.VideoCapture(video_file)
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+        print(f"info vid {name} has {total_frames} frames")
+
 
 
         original_frames = OrderedDict()

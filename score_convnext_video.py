@@ -5,7 +5,7 @@ import warnings
 print("importing modules")
 from dataset_tool import (
     RandomSeqFaceFramesDataset,
-    FaceFramesSeqPredictionDataset_all_frames,
+    VideoFramesPredictionDataset_3,
 )
 from dataset_tool import build_transforms
 
@@ -85,7 +85,7 @@ class ConvNeXt(pl.LightningModule):
         self.fc = nn.Linear(n_features, 512)
         # self.fc2 = nn.Linear(512, 256)
         # self.fc3 = nn.Linear(256, 64)
-        self.fc4 = nn.Linear(512, 1)
+        self.fc2 = nn.Linear(512, 1)
         self.mse = nn.MSELoss()
         self.mae = nn.L1Loss()
 
@@ -159,7 +159,7 @@ class ConvNeXt(pl.LightningModule):
         x = torch.nn.functional.relu(self.fc(x))
         # x = torch.nn.functional.relu(self.fc2(x))
         # x = torch.nn.functional.relu(self.fc3(x))
-        x = self.fc4(x)
+        x = self.fc2(x)
         logit = x
 
         return logit
