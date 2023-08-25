@@ -588,7 +588,6 @@ if __name__ == "__main__":
 
                     sequences = sequences.permute(1, 0, 2, 3, 4)
 
-                    sequences_lr = sequences_lr.permute(1, 0, 2, 3, 4)
 
                     sequences_lr = torch.flip(sequences, [3])
                     
