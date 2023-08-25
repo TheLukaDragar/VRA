@@ -931,41 +931,37 @@ class VideoFramesDataset_3_face(Dataset):
         return len(self.video_files)
  
 class VideoFramesPredictionDataset_3(Dataset):
-    def __init__(self, dataset_root=None, labels_file=None, transform=None, sequence_length=5, scale=1.3):
-        self.dataset_root = dataset_root
+    def __init__(self,video_dir, transform=None, max_frames=250, scale=1.3):
         self.transform = transform
-        self.sequence_length = sequence_length
-        self.labels_file = labels_file
         self.scale = scale
+        self.max_frames = max_frames
 
         # Initialize the MTCNN model for face detection
         self.face_detector = MTCNN(margin=0, thresholds=[0.6, 0.7, 0.7], device='cpu')
 
-        print("Loading dataset from {}...".format(dataset_root))
 
-        lines = []
+        # lines = []
 
-        with open(self.labels_file, 'r') as f:
-            lines = [line.strip() for line in f]
+        # with open(self.labels_file, 'r') as f:
+        #     lines = [line.strip() for line in f]
 
-        self.video_dirs = [os.path.join(self.dataset_root, line) for line in lines]
-        self.names = lines
+        self.video_files = os.listdir(video_dir)
+        self.names = [os.path.join(video_dir, line) for line in self.video_files]
 
-        print("Loaded {} videos".format(len(self.video_dirs)))
+        print("Loaded {} video file".format(self.name))
 
     def __getitem__(self, index):
-        video_file = self.video_dirs[index]
+        video_file = self.video_files[index]
         name = self.names[index]
 
         cap = cv2.VideoCapture(video_file)
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-        start_frame = random.randint(0, max(total_frames - self.sequence_length, 0))
 
         original_frames = OrderedDict()
         halve_frames = OrderedDict()
 
-        for i in range(start_frame, start_frame + self.sequence_length):
+        for i in range(0,self.max_frames):
             cap.set(cv2.CAP_PROP_POS_FRAMES, i)
             ret, frame = cap.read()
             if not ret:
@@ -1011,16 +1007,16 @@ class VideoFramesPredictionDataset_3(Dataset):
 
         cap.release()
 
-        if len(sequence) < self.sequence_length:
-            print("Warning: video {} has only {} frames".format(video_file))
-            print(f"info vid has {total_frames} frames")
+        # if len(sequence) < self.sequence_length:
+        #     print("Warning: video {} has only {} frames".format(video_file))
+        print(f"info vid has {total_frames} frames")
 
         sequence_tensor = torch.stack(sequence)
 
         return sequence_tensor, name
 
     def __len__(self):
-        return len(self.video_dirs)
+        return len(self.video_files)
 
 
 class VideoFramesPredictionDataset(Dataset):
