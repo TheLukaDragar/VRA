@@ -617,6 +617,13 @@ if __name__ == "__main__":
                 f.write(f"std_prediction_combined {(std_prediction+std_prediction_lr)/2}\n")
                 f.write(f"mean_prediction_combined {(mean_prediction+mean_prediction_lr)/2}\n")
 
+                print(f"std_prediction {std_prediction}")
+                print(f"std_prediction_lr {std_prediction_lr}")
+                print(f"mean_prediction {mean_prediction}")
+                print(f"mean_prediction_lr {mean_prediction_lr}")
+                print(f"std_prediction_combined {(std_prediction+std_prediction_lr)/2}")
+                print(f"VRA {(mean_prediction+mean_prediction_lr)/2}")
+
 
 
 
