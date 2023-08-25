@@ -72,7 +72,9 @@ class Eva(pl.LightningModule):
         model_name="eva_large_patch14_336.in22k_ft_in22k_in1k",
         dropout=0.1,
         loss="rmse",
-        drop_path_rate=0.0
+        drop_path_rate=0.0,
+        weight_decay=0.01
+
     ):
         super(Eva, self).__init__()
         self.model_name = model_name
@@ -92,6 +94,7 @@ class Eva(pl.LightningModule):
         self.mse = nn.MSELoss()
         self.mae = nn.L1Loss()
         self.loss_fn = None
+        self.weight_decay = weight_decay
 
         self.test_preds = {}
         self.test_labels = {}
@@ -243,7 +246,7 @@ class Eva(pl.LightningModule):
         self.log("val_loss", loss.item(), on_epoch=True, prog_bar=True, sync_dist=True)
 
     def configure_optimizers(self):
-        optimizer = AdamW(self.parameters(), lr=2e-5)
+        optimizer = AdamW(self.parameters(), lr=2e-5, weight_decay=self.weight_decay)
         lr_scheduler = {
             "scheduler": ReduceLROnPlateau(
                 optimizer, mode="min", factor=0.1, patience=2, verbose=True
@@ -407,6 +410,9 @@ if __name__ == "__main__":
     parser.add_argument('--augment_prob', type=float, default=0.5, help='Augmentation probability.')
     #drop_path_rate
     parser.add_argument('--drop_path_rate', type=float, default=0.0, help='Drop path rate.')
+
+     #weight_decay
+    parser.add_argument('--weight_decay', type=float, default=0.01, help='Weight decay.')
 
 
     # parser.add_argument('--test_labels_dir', default='/d/hpc/projects/FRI/ldragar/label/', help='Path to the test labels directory.')
@@ -576,7 +582,7 @@ if __name__ == "__main__":
         model_name="eva_large_patch14_336.in22k_ft_in22k_in1k",
         dropout=args.dropout,
         loss=args.loss,
-        drop_path_rate=args.drop_path_rate
+        drop_path_rate=args.drop_path_rate,weight_decay=args.weight_decay
     )
     if args.from_cp_id != "None":
         checkpoint_path = os.path.join(final_model_save_dir,args.from_cp_id,f"{args.from_cp_id}.pt")

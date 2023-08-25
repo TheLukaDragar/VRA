@@ -1,5 +1,5 @@
 project: luka_vra
-name: vega_convnext_images2
+name: vega_convnext_images4
 program: train_convnext_images.py
 
 
@@ -37,15 +37,15 @@ parameters:
   batch_size:
     values:
       - 1
-      - 2
+      - 8
     distribution: categorical
     
     
   seq_len:
     values:
-      - 4
-      - 10
+      - 8
       - 16
+      - 32
 
     distribution: categorical
 
@@ -64,6 +64,7 @@ parameters:
     values:
       - 16
       - 32
+      - 48
     distribution: categorical
 
   loss:
@@ -98,17 +99,24 @@ parameters:
     values:
       - 0.1
     distribution: categorical
+
+  weight_decay:
+    values:
+      - 0.01
+      - 0.1
+      - 0.001
+    distribution: categorical
   
   seed:
     values:
-      - 420
       - -1
+      - 1126
     distribution: categorical
 
   og_checkpoint:
     values:
       - "./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth"
-      - "./borut_models/convnext_xlarge_384_in22ft1k_30.pth"
+      # - "./borut_models/convnext_xlarge_384_in22ft1k_30.pth"
     distribution: categorical
 
 
